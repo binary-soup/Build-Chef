@@ -9,36 +9,61 @@ import (
 	"github.com/binary-soup/bchef/style"
 )
 
-type CookCmd struct{}
+var compileFlags = []string{"-Wall", "-std=c++17"}
 
 // NOTE: add -g for debug
 // TODO: handle command injection
+type CookCmd struct{}
 
-func (CookCmd) exec(src string, out string) bool {
-	fmt.Print("  ", style.File.Format(src), " -> ")
+func (CookCmd) compile(createStyle style.Style, r *recipe.Recipe, flags []string, out string, src ...string) bool {
+	fmt.Print("  ", style.FileV1.Format(src[0]), " -> ")
 
-	cmd := exec.Command("g++", "-Wall", "-std=c++17", "-o", out, src)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	args := append(compileFlags, flags...)
+	args = append(args, r.IncludeDirs...)
+	args = append(args, src...)
+	args = append(args, "-o", out)
 
-	_, exit := cmd.Run().(*exec.ExitError)
-	if !exit {
-		style.BoldCreate.Println(out)
+	cmd := exec.Command("g++", args...)
+	cmd.Stderr = os.Stdout
+
+	_, err := cmd.Run().(*exec.ExitError)
+	if !err {
+		createStyle.Println(out)
 	}
 
-	return exit
+	return !err
 }
 
-func (cmd CookCmd) Run(r *recipe.Recipe) error {
-	style.Header.Println("Cooking...")
+func (cmd CookCmd) compileSourceFiles(r *recipe.Recipe) bool {
+	for i, src := range r.SourceFiles {
+		if ok := cmd.compile(style.Create, r, []string{"-c"}, r.ObjectFiles[i], src); !ok {
+			return false
+		}
+	}
+	return true
+}
 
-	fail := cmd.exec("main.cxx", r.Name)
+func (cmd CookCmd) compileExecutable(r *recipe.Recipe) bool {
+	style.FileV2.Printf("  + [%d] object files\n", len(r.ObjectFiles))
 
-	if fail {
-		style.BoldError.Println("Burnt!")
-	} else {
-		style.BoldSuccess.Println("Bon Appétit!")
+	src := append([]string{"main.cxx"}, r.ObjectFiles...)
+	return cmd.compile(style.BoldCreate, r, []string{}, r.Name, src...)
+}
+
+func (cmd CookCmd) Run(r *recipe.Recipe) {
+	os.MkdirAll(".bchef/objects", 0755)
+
+	style.Header.Println("Prepping...")
+	if ok := cmd.compileSourceFiles(r); !ok {
+		style.BoldError.Println("Bad Ingredients!")
+		return
 	}
 
-	return nil
+	style.Header.Println("Cooking...")
+	if ok := cmd.compileExecutable(r); !ok {
+		style.BoldError.Println("Burnt!")
+		return
+	}
+
+	style.BoldSuccess.Println("Bon Appétit!")
 }

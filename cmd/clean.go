@@ -9,13 +9,19 @@ import (
 
 type CleanCmd struct{}
 
-func (CleanCmd) Run(r *recipe.Recipe) error {
+func (CleanCmd) removeFile(file string, deleteStyle style.Style) {
+	if err := os.Remove(file); err == nil {
+		deleteStyle.Println("  x " + file)
+	}
+}
+
+func (cmd CleanCmd) Run(r *recipe.Recipe) {
 	style.Header.Println("Doing the Dishes...")
 
-	err := os.Remove(r.Name)
-	if err == nil {
-		style.BoldDelete.Println("  x " + r.Name)
+	for _, obj := range r.ObjectFiles {
+		cmd.removeFile(obj, style.Delete)
 	}
+	cmd.removeFile(r.Name, style.BoldDelete)
 
-	return nil
+	style.BoldSuccess.Println("Squeaky Clean!")
 }

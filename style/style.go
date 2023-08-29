@@ -36,3 +36,7 @@ func (s Style) Print(str string) {
 func (s Style) Println(str string) {
 	fmt.Println(s.Format(str))
 }
+
+func (s Style) Printf(format string, a ...any) {
+	s.Print(fmt.Sprintf(format, a...))
+}

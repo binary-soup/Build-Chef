@@ -20,14 +20,15 @@ func RunCommand(name string) error {
 		return err
 	}
 
-	fmt.Println("Recipe loaded from", style.BoldFile.Format(r.Path))
+	fmt.Println("Recipe loaded from", style.BoldFileV2.Format(r.Path))
 
 	cmd, exists := cmds[name]
 	if !exists {
 		return fmt.Errorf("unknown command \"%s\"", name)
 	}
 
-	return cmd.Run(r)
+	cmd.Run(r)
+	return nil
 }
 
 func main() {

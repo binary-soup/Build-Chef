@@ -5,5 +5,5 @@ import (
 )
 
 type Command interface {
-	Run(*recipe.Recipe) error
+	Run(*recipe.Recipe)
 }

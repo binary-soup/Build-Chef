@@ -1,15 +1,50 @@
 package recipe
 
 import (
-	"bufio"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 )
 
 type Recipe struct {
-	Path string
-	Name string
+	Path        string
+	Name        string
+	IncludeDirs []string
+	SourceFiles []string
+	ObjectFiles []string
+}
+
+func (Recipe) sourceToObject(src string) string {
+	result := make([]rune, len(src))
+
+	for i, char := range src {
+		if char == '/' {
+			result[i] = '.'
+		} else {
+			result[i] = char
+		}
+	}
+
+	return filepath.Join(".bchef", "objects", string(result)+".o")
+}
+
+func (rec *Recipe) parse(r io.Reader) {
+	p := newParser(r)
+
+	rec.Name = p.NextLine()
+	dir := p.NextLine()
+
+	rec.IncludeDirs = []string{"-I" + dir}
+
+	for line := p.NextLine(); len(line) > 0; line = p.NextLine() {
+		rec.SourceFiles = append(rec.SourceFiles, filepath.Join(dir, line))
+	}
+
+	rec.ObjectFiles = make([]string, len(rec.SourceFiles))
+	for i, src := range rec.SourceFiles {
+		rec.ObjectFiles[i] = rec.sourceToObject(src)
+	}
 }
 
 func Load(path string) (*Recipe, error) {
@@ -24,11 +59,8 @@ func Load(path string) (*Recipe, error) {
 	}
 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	scanner.Scan()
+	rec := Recipe{Path: path}
+	rec.parse(file)
 
-	return &Recipe{
-		Path: path,
-		Name: scanner.Text(),
-	}, nil
+	return &rec, nil
 }
