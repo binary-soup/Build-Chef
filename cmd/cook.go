@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 
@@ -9,17 +10,23 @@ import (
 	"github.com/binary-soup/bchef/style"
 )
 
-var compileFlags = []string{"-Wall", "-std=c++17"}
-
 // NOTE: add -g for debug
 // TODO: handle command injection
-type CookCmd struct{}
 
-func (CookCmd) compile(createStyle style.Style, r *recipe.Recipe, flags []string, out string, src ...string) bool {
+const (
+	COMPILE_LOG_FILE = ".bchef/compile_log.txt"
+)
+
+var compileFlags = []string{"-Wall", "-std=c++17"}
+
+type CookCmd struct {
+}
+
+func (CookCmd) compile(createStyle style.Style, r *recipe.Recipe, log *log.Logger, flags []string, out string, src ...string) bool {
 	fmt.Print("  ", style.FileV1.Format(r.TrimSourceDir(src[0])), " -> ")
 
-	args := append(compileFlags, flags...)
-	args = append(args, r.IncludeDirs...)
+	args := append(compileFlags, r.IncludeDirs...)
+	args = append(args, flags...)
 	args = append(args, src...)
 	args = append(args, "-o", out)
 
@@ -31,39 +38,48 @@ func (CookCmd) compile(createStyle style.Style, r *recipe.Recipe, flags []string
 		createStyle.Println(r.TrimObjectDir(out))
 	}
 
+	log.Printf("[Compile %s] %s\n", src[0], cmd.String())
 	return !err
 }
 
-func (cmd CookCmd) compileSourceFiles(r *recipe.Recipe) bool {
+func (cmd CookCmd) compileSourceFiles(r *recipe.Recipe, log *log.Logger) bool {
 	for i, src := range r.SourceFiles {
-		if ok := cmd.compile(style.Create, r, []string{"-c"}, r.ObjectFiles[i], src); !ok {
+		if ok := cmd.compile(style.Create, r, log, []string{"-c"}, r.ObjectFiles[i], src); !ok {
 			return false
 		}
 	}
 	return true
 }
 
-func (cmd CookCmd) compileExecutable(r *recipe.Recipe) bool {
+func (cmd CookCmd) compileExecutable(r *recipe.Recipe, log *log.Logger) bool {
 	style.FileV2.Printf("  + [%d] object files\n", len(r.ObjectFiles))
 
 	src := append([]string{"main.cxx"}, r.ObjectFiles...)
-	return cmd.compile(style.BoldCreate, r, []string{}, r.Name, src...)
+	return cmd.compile(style.BoldCreate, r, log, []string{}, r.Name, src...)
 }
 
 func (cmd CookCmd) Run(r *recipe.Recipe) {
 	os.MkdirAll(recipe.OBJECT_DIR, 0755)
+	file, _ := os.Create(COMPILE_LOG_FILE)
+	defer file.Close()
+
+	log := log.New(file, "", log.Ltime)
+	log.Println("[Compilation Start]")
 
 	style.Header.Println("Prepping...")
-	if ok := cmd.compileSourceFiles(r); !ok {
+	if ok := cmd.compileSourceFiles(r, log); !ok {
+		log.Println("[Compilation Failed]")
 		style.BoldError.Println("Bad Ingredients!")
 		return
 	}
 
 	style.Header.Println("Cooking...")
-	if ok := cmd.compileExecutable(r); !ok {
+	if ok := cmd.compileExecutable(r, log); !ok {
+		log.Println("[Compilation Failed]")
 		style.BoldError.Println("Burnt!")
 		return
 	}
 
+	log.Println("[Compilation Success]")
 	style.BoldSuccess.Println("Bon Appétit!")
 }
