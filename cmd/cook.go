@@ -16,7 +16,7 @@ var compileFlags = []string{"-Wall", "-std=c++17"}
 type CookCmd struct{}
 
 func (CookCmd) compile(createStyle style.Style, r *recipe.Recipe, flags []string, out string, src ...string) bool {
-	fmt.Print("  ", style.FileV1.Format(src[0]), " -> ")
+	fmt.Print("  ", style.FileV1.Format(r.TrimSourceDir(src[0])), " -> ")
 
 	args := append(compileFlags, flags...)
 	args = append(args, r.IncludeDirs...)
@@ -28,7 +28,7 @@ func (CookCmd) compile(createStyle style.Style, r *recipe.Recipe, flags []string
 
 	_, err := cmd.Run().(*exec.ExitError)
 	if !err {
-		createStyle.Println(out)
+		createStyle.Println(r.TrimObjectDir(out))
 	}
 
 	return !err
@@ -51,7 +51,7 @@ func (cmd CookCmd) compileExecutable(r *recipe.Recipe) bool {
 }
 
 func (cmd CookCmd) Run(r *recipe.Recipe) {
-	os.MkdirAll(".bchef/objects", 0755)
+	os.MkdirAll(recipe.OBJECT_DIR, 0755)
 
 	style.Header.Println("Prepping...")
 	if ok := cmd.compileSourceFiles(r); !ok {

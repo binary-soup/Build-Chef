@@ -5,6 +5,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
+)
+
+const (
+	INCLUDE_FLAG = "-I"
+	OBJECT_DIR   = ".bchef/obj"
 )
 
 type Recipe struct {
@@ -15,10 +21,22 @@ type Recipe struct {
 	ObjectFiles []string
 }
 
-func (Recipe) sourceToObject(src string) string {
-	result := make([]rune, len(src))
+func (r Recipe) GetSourceDir() string {
+	return r.IncludeDirs[0][len(INCLUDE_FLAG):]
+}
 
-	for i, char := range src {
+func (r Recipe) TrimSourceDir(src string) string {
+	return strings.TrimPrefix(src, r.GetSourceDir()+"/")
+}
+
+func (Recipe) TrimObjectDir(obj string) string {
+	return strings.TrimPrefix(obj, OBJECT_DIR+"/")
+}
+
+func (Recipe) pathToObject(path string) string {
+	result := make([]rune, len(path))
+
+	for i, char := range path {
 		if char == '/' {
 			result[i] = '.'
 		} else {
@@ -26,16 +44,16 @@ func (Recipe) sourceToObject(src string) string {
 		}
 	}
 
-	return filepath.Join(".bchef", "objects", string(result)+".o")
+	return filepath.Join(OBJECT_DIR, string(result)+".o")
 }
 
 func (rec *Recipe) parse(r io.Reader) {
 	p := newParser(r)
 
 	rec.Name = p.NextLine()
-	dir := p.NextLine()
+	dir := strings.TrimRight(p.NextLine(), "/")
 
-	rec.IncludeDirs = []string{"-I" + dir}
+	rec.IncludeDirs = []string{INCLUDE_FLAG + dir}
 
 	for line := p.NextLine(); len(line) > 0; line = p.NextLine() {
 		rec.SourceFiles = append(rec.SourceFiles, filepath.Join(dir, line))
@@ -43,7 +61,7 @@ func (rec *Recipe) parse(r io.Reader) {
 
 	rec.ObjectFiles = make([]string, len(rec.SourceFiles))
 	for i, src := range rec.SourceFiles {
-		rec.ObjectFiles[i] = rec.sourceToObject(src)
+		rec.ObjectFiles[i] = rec.pathToObject(rec.TrimSourceDir(src))
 	}
 }
 
@@ -59,8 +77,8 @@ func Load(path string) (*Recipe, error) {
 	}
 	defer file.Close()
 
-	rec := Recipe{Path: path}
-	rec.parse(file)
+	r := Recipe{Path: path}
+	r.parse(file)
 
-	return &rec, nil
+	return &r, nil
 }
