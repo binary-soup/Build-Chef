@@ -9,24 +9,19 @@ import (
 )
 
 const (
-	INCLUDE_FLAG = "-I"
-	OBJECT_DIR   = ".bchef/obj"
+	OBJECT_DIR = ".bchef/obj"
 )
 
 type Recipe struct {
 	Path        string
 	Name        string
-	IncludeDirs []string
+	SourceDir   string
 	SourceFiles []string
 	ObjectFiles []string
 }
 
-func (r Recipe) GetSourceDir() string {
-	return r.IncludeDirs[0][len(INCLUDE_FLAG):]
-}
-
 func (r Recipe) TrimSourceDir(src string) string {
-	return strings.TrimPrefix(src, r.GetSourceDir()+"/")
+	return strings.TrimPrefix(src, r.SourceDir+"/")
 }
 
 func (Recipe) TrimObjectDir(obj string) string {
@@ -51,12 +46,10 @@ func (rec *Recipe) parse(r io.Reader) {
 	p := newParser(r)
 
 	rec.Name = p.NextLine()
-	dir := strings.TrimRight(p.NextLine(), "/")
-
-	rec.IncludeDirs = []string{INCLUDE_FLAG + dir}
+	rec.SourceDir = strings.TrimRight(p.NextLine(), "/")
 
 	for line := p.NextLine(); len(line) > 0; line = p.NextLine() {
-		rec.SourceFiles = append(rec.SourceFiles, filepath.Join(dir, line))
+		rec.SourceFiles = append(rec.SourceFiles, filepath.Join(rec.SourceDir, line))
 	}
 
 	rec.ObjectFiles = make([]string, len(rec.SourceFiles))

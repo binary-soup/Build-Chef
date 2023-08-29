@@ -24,22 +24,19 @@ func (cmd CookCmd) Run(r *recipe.Recipe) {
 	defer file.Close()
 
 	log := log.New(file, "", log.Ltime)
-	com := compiler.Compiler{
-		Log:         log,
-		IncludeDirs: r.IncludeDirs,
-	}
+	com := compiler.Compiler{Log: log, Recipe: r}
 
 	log.Println("[Compilation Start]")
 
 	style.Header.Println("Prepping...")
-	if ok := com.CompileObjects(r.SourceFiles, r.ObjectFiles); !ok {
+	if ok := com.CompileObjects(); !ok {
 		log.Println("[Compilation Failed]")
 		style.BoldError.Println("Bad Ingredients!")
 		return
 	}
 
 	style.Header.Println("Cooking...")
-	if ok := com.CompileExecutable("main.cxx", r.Name, r.ObjectFiles); !ok {
+	if ok := com.CompileExecutable(); !ok {
 		log.Println("[Compilation Failed]")
 		style.BoldError.Println("Burnt!")
 		return
