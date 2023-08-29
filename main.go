@@ -1,30 +1,43 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
-	"github.com/binary-soup/bchef/cook"
+	"github.com/binary-soup/bchef/cmd"
+	"github.com/binary-soup/bchef/recipe"
+	"github.com/binary-soup/bchef/style"
 )
 
-func run(args []string) error {
-	if len(args) == 0 {
-		return errors.New("no command given")
+var cmds = map[string]cmd.Command{
+	"cook":  cmd.CookCmd{},
+	"clean": cmd.CleanCmd{},
+}
+
+func RunCommand(name string) error {
+	r, err := recipe.Load(".")
+	if err != nil {
+		return err
 	}
 
-	cmd := args[0]
-	args = args[1:]
+	fmt.Println("Recipe loaded from", style.BoldFile.Format(r.Path))
 
-	if cmd == "cook" {
-		return cook.Run(args)
+	cmd, exists := cmds[name]
+	if !exists {
+		return fmt.Errorf("unknown command \"%s\"", name)
 	}
 
-	return fmt.Errorf("unknown command \"%s\"", cmd)
+	return cmd.Run(r)
 }
 
 func main() {
-	if err := run(os.Args[1:]); err != nil {
-		fmt.Println(err)
+	if len(os.Args) < 2 {
+		// TODO: print help
+		fmt.Println("no command given")
+		return
+	}
+
+	if err := RunCommand(os.Args[1]); err != nil {
+		fmt.Println(style.BoldError.Format("Error:"), err)
 	}
 }
