@@ -37,7 +37,7 @@ func (cmd CookCmd) Run(r *recipe.Recipe) error {
 	if fail {
 		style.BoldError.Println("Burnt!")
 	} else {
-		style.BoldSuccess.Println("Ready to Serve!")
+		style.BoldSuccess.Println("Bon Appétit!")
 	}
 
 	return nil
