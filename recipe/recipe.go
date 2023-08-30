@@ -13,11 +13,12 @@ const (
 )
 
 type Recipe struct {
-	Path        string
-	Name        string
-	SourceDir   string
-	SourceFiles []string
-	ObjectFiles []string
+	Path           string
+	Name           string
+	SourceDir      string
+	SourceFiles    []string
+	ObjectFiles    []string
+	ChangedIndices []int
 }
 
 func (r Recipe) TrimSourceDir(src string) string {
@@ -42,6 +43,14 @@ func (Recipe) pathToObject(path string) string {
 	return filepath.Join(OBJECT_DIR, string(result)+".o")
 }
 
+func (Recipe) fileModTime(file string) int64 {
+	info, err := os.Stat(file)
+	if err != nil {
+		return 0
+	}
+	return info.ModTime().Unix()
+}
+
 func (rec *Recipe) parse(r io.Reader) {
 	p := newParser(r)
 
@@ -55,6 +64,10 @@ func (rec *Recipe) parse(r io.Reader) {
 	rec.ObjectFiles = make([]string, len(rec.SourceFiles))
 	for i, src := range rec.SourceFiles {
 		rec.ObjectFiles[i] = rec.pathToObject(rec.TrimSourceDir(src))
+
+		if rec.fileModTime(src) > rec.fileModTime(rec.ObjectFiles[i]) {
+			rec.ChangedIndices = append(rec.ChangedIndices, i)
+		}
 	}
 }
 
