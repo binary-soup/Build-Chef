@@ -19,3 +19,6 @@ var BoldCreate = BoldSuccess
 
 var Delete = Error
 var BoldDelete = BoldError
+
+var Info = New(Blue)
+var BoldInfo = New(Bold, Blue)

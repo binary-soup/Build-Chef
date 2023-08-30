@@ -4,6 +4,10 @@ import (
 	"github.com/binary-soup/bchef/recipe"
 )
 
+const (
+	INDENT = "  "
+)
+
 type Command interface {
-	Run(*recipe.Recipe)
+	Run(*recipe.Recipe) bool
 }
