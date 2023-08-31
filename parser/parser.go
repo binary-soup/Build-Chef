@@ -1,21 +1,21 @@
-package recipe
+package parser
 
 import (
 	"bufio"
 	"io"
 )
 
-func newParser(r io.Reader) parser {
-	return parser{
+func New(r io.Reader) Parser {
+	return Parser{
 		Scanner: bufio.NewScanner(r),
 	}
 }
 
-type parser struct {
+type Parser struct {
 	Scanner *bufio.Scanner
 }
 
-func (p parser) NextLine() string {
+func (p Parser) NextLine() string {
 	for p.Scanner.Scan() {
 		line := p.Scanner.Text()
 

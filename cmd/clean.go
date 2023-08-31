@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 
+	"github.com/binary-soup/bchef/cmd/compiler"
 	"github.com/binary-soup/bchef/recipe"
 	"github.com/binary-soup/bchef/style"
 )
@@ -17,6 +18,8 @@ func (CleanCmd) removeFile(r *recipe.Recipe, file string, deleteStyle style.Styl
 
 func (cmd CleanCmd) Run(r *recipe.Recipe) bool {
 	style.Header.Println("Doing the Dishes...")
+
+	os.Remove(compiler.INCLUDE_CACHE_FILE)
 
 	for _, obj := range r.ObjectFiles {
 		cmd.removeFile(r, obj, style.Delete)

@@ -19,8 +19,17 @@ type Compiler struct {
 }
 
 func (c Compiler) CompileObjects() bool {
-	for i, index := range c.Recipe.ChangedIndices {
-		if ok := c.compileObject(c.Recipe.SourceFiles[index], c.Recipe.ObjectFiles[index], float32(i)/float32(len(c.Recipe.ChangedIndices))); !ok {
+	includes := includeMap{}
+
+	includes.LoadCache()
+	defer includes.SaveCache()
+
+	for i, src := range c.Recipe.SourceFiles {
+		if !c.Recipe.IsSourceChanged(i) {
+			continue
+		}
+
+		if ok := c.compileObject(src, c.Recipe.ObjectFiles[i], float32(i)/float32(len(c.Recipe.SourceFiles))); !ok {
 			return false
 		}
 	}
