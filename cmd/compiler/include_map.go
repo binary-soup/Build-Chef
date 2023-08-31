@@ -49,9 +49,10 @@ func (m includeMap) ParseSourceFile(src string, path string) {
 	}
 	defer file.Close()
 
+	m[src] = []string{}
 	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
 
+	for scanner.Scan() {
 		match := includeRegex.FindStringSubmatch(scanner.Text())
 		if match == nil {
 			continue

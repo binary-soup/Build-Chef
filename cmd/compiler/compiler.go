@@ -32,6 +32,7 @@ func (c Compiler) CompileObjects() bool {
 		if ok := c.compileObject(src, c.Recipe.ObjectFiles[i], float32(i)/float32(len(c.Recipe.SourceFiles))); !ok {
 			return false
 		}
+		includes.ParseSourceFile(src, c.Recipe.SourceDir)
 	}
 	return true
 }
