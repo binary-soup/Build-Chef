@@ -48,10 +48,6 @@ func (Recipe) TrimObjectDir(obj string) string {
 	return strings.TrimPrefix(obj, OBJECT_DIR+"/")
 }
 
-func (r *Recipe) IsSourceChanged(index int) bool {
-	return r.fileModTime(r.SourceFiles[index]) > r.fileModTime(r.ObjectFiles[index])
-}
-
 func (r *Recipe) parse(reader io.Reader) {
 	p := parser.New(reader)
 
@@ -80,12 +76,4 @@ func (Recipe) pathToObject(path string) string {
 	}
 
 	return filepath.Join(OBJECT_DIR, string(result)+".o")
-}
-
-func (Recipe) fileModTime(file string) int64 {
-	info, err := os.Stat(file)
-	if err != nil {
-		return 0
-	}
-	return info.ModTime().Unix()
 }
