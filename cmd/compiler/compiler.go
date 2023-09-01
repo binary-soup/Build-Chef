@@ -19,20 +19,21 @@ type Compiler struct {
 }
 
 func (c Compiler) CompileObjects() bool {
-	srcMap := sourceMap{}
+	tracker := newTracker(c.Recipe.SourceDir)
 
-	srcMap.LoadCache()
-	defer srcMap.SaveCache()
+	// cache.Load()
+	// defer cache.Save()
 
 	for i, src := range c.Recipe.SourceFiles {
-		if !srcMap.IsFileChanged(src) {
+		obj := c.Recipe.ObjectFiles[i]
+
+		if !tracker.NeedsCompiling(src, obj) {
 			continue
 		}
 
-		if ok := c.compileObject(src, c.Recipe.ObjectFiles[i], float32(i)/float32(len(c.Recipe.SourceFiles))); !ok {
+		if ok := c.compileObject(src, obj, float32(i)/float32(len(c.Recipe.SourceFiles))); !ok {
 			return false
 		}
-		srcMap.ParseSourceFile(src, c.Recipe.SourceDir)
 	}
 	return true
 }
