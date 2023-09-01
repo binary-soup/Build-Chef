@@ -7,14 +7,11 @@ import (
 	"regexp"
 )
 
-const (
-	INCLUDE_CACHE_FILE = ".bchef/include_cache.txt"
-)
-
 var includeRegex = regexp.MustCompile(`^#include "([^"]+.(h|hxx))"$`)
 
 func newTracker(dir string) sourceTracker {
 	return sourceTracker{
+		cache:    sourceCache{},
 		dir:      dir,
 		includes: map[string][]string{},
 		mods:     map[string]int64{},
@@ -22,40 +19,30 @@ func newTracker(dir string) sourceTracker {
 }
 
 type sourceTracker struct {
+	cache    sourceCache
 	dir      string
 	includes map[string][]string
 	mods     map[string]int64
 }
 
-// func (c *sourceTracker) Load() {
-// 	file, err := os.Open(INCLUDE_CACHE_FILE)
-// 	if err != nil {
-// 		return
-// 	}
-// 	defer file.Close()
+func (t *sourceTracker) LoadCache() {
+	t.cache = sourceCache{}
+	t.cache.Load()
+}
 
-// 	p := parser.New(file)
-// 	for line := p.NextLine(); len(line) > 0; line = p.NextLine() {
-// 		tokens := strings.Split(line, ",")
-// 		t.includes[tokens[0]] = tokens[1:]
-// 	}
-// }
-
-// func (t sourceTracker) Save() {
-// 	file, _ := os.Create(INCLUDE_CACHE_FILE)
-// 	defer file.Close()
-
-// 	for key, val := range t.includes {
-// 		fmt.Fprintf(file, "%s,%s\n", key, strings.Join(val, ","))
-// 	}
-// }
+func (t *sourceTracker) SaveCache() {
+	for file, includes := range t.includes {
+		t.cache.UpdateEntry(file, t.getMod(file), includes)
+	}
+	t.cache.Save()
+}
 
 func (t sourceTracker) NeedsCompiling(src string, obj string) bool {
-	return t.isFileNewer(src, t.getFileMod(obj))
+	return t.isFileNewer(src, t.getMod(obj))
 }
 
 func (t sourceTracker) isFileNewer(file string, compare int64) bool {
-	mod := t.getFileMod(file)
+	mod := t.getMod(file)
 	if mod > compare {
 		return true
 	}
@@ -68,7 +55,7 @@ func (t sourceTracker) isFileNewer(file string, compare int64) bool {
 	return false
 }
 
-func (t sourceTracker) getFileMod(file string) int64 {
+func (t sourceTracker) getMod(file string) int64 {
 	mod, ok := t.mods[file]
 	if ok {
 		return mod
@@ -91,9 +78,13 @@ func (t sourceTracker) getIncludes(file string) []string {
 		return includes
 	}
 
-	includes = t.parseIncludes(file)
-	t.includes[file] = includes
+	includes, ok = t.cache.GetIncludes(file, t.getMod(file))
+	if !ok {
+		// TODO: fix bug?
+		includes = t.parseIncludes(file)
+	}
 
+	t.includes[file] = includes
 	return includes
 }
 

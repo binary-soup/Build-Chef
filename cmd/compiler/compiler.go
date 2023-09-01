@@ -21,8 +21,8 @@ type Compiler struct {
 func (c Compiler) CompileObjects() bool {
 	tracker := newTracker(c.Recipe.SourceDir)
 
-	// cache.Load()
-	// defer cache.Save()
+	tracker.LoadCache()
+	defer tracker.SaveCache()
 
 	for i, src := range c.Recipe.SourceFiles {
 		obj := c.Recipe.ObjectFiles[i]
