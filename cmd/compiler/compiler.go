@@ -20,23 +20,26 @@ type Compiler struct {
 }
 
 func (c Compiler) CompileObjects() bool {
+	indices := c.calcChangedSources()
+
+	for i, index := range indices {
+		if ok := c.compileObject(c.Recipe.SourceFiles[index], c.Recipe.ObjectFiles[index], float32(i)/float32(len(indices))); !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func (c Compiler) calcChangedSources() []int {
 	tracker := newTracker(c.Recipe.SourceDir)
 
 	tracker.LoadCache(c.Recipe)
 	defer tracker.SaveCache(c.Recipe)
 
-	for i, src := range c.Recipe.SourceFiles {
-		obj := c.Recipe.ObjectFiles[i]
+	indices := tracker.CalcChangedIndices(c.Recipe.SourceFiles, c.Recipe.ObjectFiles)
+	style.InfoV2.Printf("%s+ [%d] changed sources\n", c.Indent, len(indices))
 
-		if !tracker.NeedsCompiling(src, obj) {
-			continue
-		}
-
-		if ok := c.compileObject(src, obj, float32(i)/float32(len(c.Recipe.SourceFiles))); !ok {
-			return false
-		}
-	}
-	return true
+	return indices
 }
 
 func (c Compiler) compileObject(src string, obj string, percent float32) bool {
@@ -44,7 +47,7 @@ func (c Compiler) compileObject(src string, obj string, percent float32) bool {
 }
 
 func (c Compiler) CompileExecutable() bool {
-	style.FileV2.Printf("%s+ [%d] objects\n", c.Indent, len(c.Recipe.ObjectFiles))
+	style.InfoV2.Printf("%s+ [%d] objects\n", c.Indent, len(c.Recipe.ObjectFiles))
 
 	sources := append([]string{filepath.Join(c.Recipe.Path, "main.cxx")}, c.Recipe.ObjectFiles...)
 	return c.compile(style.BoldCreate, 1.0, []string{}, c.Recipe.Path, c.Recipe.Executable, c.Recipe.Path, sources...)

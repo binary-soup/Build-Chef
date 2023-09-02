@@ -39,8 +39,16 @@ func (t *sourceTracker) SaveCache(r *recipe.Recipe) {
 	t.cache.Save(r)
 }
 
-func (t sourceTracker) NeedsCompiling(src string, obj string) bool {
-	return t.isFileNewer(src, t.getMod(obj))
+func (t sourceTracker) CalcChangedIndices(sources []string, objects []string) []int {
+	indices := []int{}
+
+	for i, src := range sources {
+		if t.isFileNewer(src, t.getMod(objects[i])) {
+			indices = append(indices, i)
+		}
+	}
+
+	return indices
 }
 
 func (t sourceTracker) isFileNewer(file string, compare int64) bool {
