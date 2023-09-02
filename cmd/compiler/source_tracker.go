@@ -80,7 +80,6 @@ func (t sourceTracker) getIncludes(file string) []string {
 
 	includes, ok = t.cache.GetIncludes(file, t.getMod(file))
 	if !ok {
-		// TODO: fix bug?
 		includes = t.parseIncludes(file)
 	}
 

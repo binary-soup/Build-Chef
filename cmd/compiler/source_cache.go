@@ -29,7 +29,7 @@ func (c sourceCache) Load(path string) {
 
 	p := parser.New(file)
 	for line := p.NextLine(); len(line) > 0; line = p.NextLine() {
-		tokens := strings.Split(line, ",")
+		tokens := strings.Split(strings.TrimSuffix(line, ","), ",")
 
 		c[tokens[0]] = sourceInfo{
 			Mod:      c.parseMod(tokens[1]),
@@ -56,10 +56,6 @@ func (c sourceCache) Save(path string) {
 }
 
 func (c sourceCache) UpdateEntry(file string, mod int64, includes []string) {
-	if len(file) == 0 {
-		return
-	}
-
 	c[file] = sourceInfo{
 		Mod:      mod,
 		Includes: includes,
