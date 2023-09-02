@@ -14,8 +14,9 @@ const (
 )
 
 var cmds = []cmd.Command{
-	cmd.NewCookCommand(),
 	cmd.NewCleanCommand(),
+	cmd.NewCookCommand(),
+	cmd.NewInfoCommand(),
 }
 
 func main() {
