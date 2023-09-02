@@ -22,8 +22,8 @@ type Compiler struct {
 func (c Compiler) CompileObjects() bool {
 	tracker := newTracker(c.Recipe.SourceDir)
 
-	tracker.LoadCache(c.Recipe.Path)
-	defer tracker.SaveCache(c.Recipe.Path)
+	tracker.LoadCache(c.Recipe)
+	defer tracker.SaveCache(c.Recipe)
 
 	for i, src := range c.Recipe.SourceFiles {
 		obj := c.Recipe.ObjectFiles[i]
@@ -40,19 +40,19 @@ func (c Compiler) CompileObjects() bool {
 }
 
 func (c Compiler) compileObject(src string, obj string, percent float32) bool {
-	return c.compile(style.Create, percent, []string{"-c"}, obj, src)
+	return c.compile(style.Create, percent, []string{"-c"}, c.Recipe.ObjectDir, obj, c.Recipe.SourceDir, src)
 }
 
 func (c Compiler) CompileExecutable() bool {
 	style.FileV2.Printf("%s+ [%d] objects\n", c.Indent, len(c.Recipe.ObjectFiles))
 
 	sources := append([]string{filepath.Join(c.Recipe.Path, "main.cxx")}, c.Recipe.ObjectFiles...)
-	return c.compile(style.BoldCreate, 1.0, []string{}, c.Recipe.Executable, sources...)
+	return c.compile(style.BoldCreate, 1.0, []string{}, c.Recipe.Path, c.Recipe.Executable, c.Recipe.Path, sources...)
 }
 
-func (c Compiler) compile(createStyle style.Style, percent float32, flags []string, out string, sources ...string) bool {
+func (c Compiler) compile(createStyle style.Style, percent float32, flags []string, outDir string, out string, srcDir string, sources ...string) bool {
 	style.BoldInfo.Printf("%s[%3d%%] ", c.Indent, int(percent*100))
-	style.File.Print(c.Recipe.TrimSourceDir(sources[0]))
+	style.File.Print(c.Recipe.TrimDir(srcDir, sources[0]))
 	fmt.Print(" -> ")
 
 	args := append(compileFlags, "-I", c.Recipe.SourceDir)
@@ -65,7 +65,7 @@ func (c Compiler) compile(createStyle style.Style, percent float32, flags []stri
 
 	_, err := cmd.Run().(*exec.ExitError)
 	if !err {
-		createStyle.Println(c.Recipe.TrimObjectDir(out))
+		createStyle.Println(c.Recipe.TrimDir(outDir, out))
 	}
 
 	c.logCommand(cmd.String(), sources[0], len(sources)-1, !err)

@@ -35,9 +35,9 @@ func (cmd CleanCommand) clean(r *recipe.Recipe) {
 	style.Header.Println("Doing the Dishes...")
 
 	for _, obj := range r.ObjectFiles {
-		cmd.removeFile(r, obj, style.Delete)
+		cmd.removeFile(r, r.ObjectDir, obj, style.Delete)
 	}
-	cmd.removeFile(r, r.Executable, style.BoldDelete)
+	cmd.removeFile(r, r.Path, r.Executable, style.BoldDelete)
 
 	os.Remove(CompileLogFile(r.Path))
 	os.Remove(compiler.SourceCacheFile(r.Path))
@@ -45,8 +45,8 @@ func (cmd CleanCommand) clean(r *recipe.Recipe) {
 	style.BoldSuccess.Println("Squeaky Clean!")
 }
 
-func (CleanCommand) removeFile(r *recipe.Recipe, file string, deleteStyle style.Style) {
+func (CleanCommand) removeFile(r *recipe.Recipe, dir string, file string, deleteStyle style.Style) {
 	if err := os.Remove(file); err == nil {
-		deleteStyle.Println(INDENT + "x " + r.TrimObjectDir(file))
+		deleteStyle.Println(INDENT + "x " + r.TrimDir(dir, file))
 	}
 }

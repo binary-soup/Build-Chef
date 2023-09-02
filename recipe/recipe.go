@@ -42,12 +42,24 @@ type Recipe struct {
 	ObjectFiles []string
 }
 
+func (Recipe) TrimDir(dir string, file string) string {
+	return strings.TrimPrefix(file, dir+"/")
+}
+
+func (r Recipe) JoinSourceDir(src string) string {
+	return filepath.Join(r.SourceDir, src)
+}
+
 func (r Recipe) TrimSourceDir(src string) string {
-	return strings.TrimPrefix(src, r.SourceDir+"/")
+	return r.TrimDir(r.SourceDir, src)
+}
+
+func (r Recipe) JoinObjectDir(obj string) string {
+	return filepath.Join(r.ObjectDir, obj)
 }
 
 func (r Recipe) TrimObjectDir(obj string) string {
-	return strings.TrimPrefix(obj, r.ObjectDir+"/")
+	return r.TrimDir(r.ObjectDir, obj)
 }
 
 func (r *Recipe) parse(reader io.Reader) {
@@ -58,7 +70,7 @@ func (r *Recipe) parse(reader io.Reader) {
 
 	r.SourceDir = filepath.Join(r.Path, strings.TrimRight(p.NextLine(), "/"))
 	for line := p.NextLine(); len(line) > 0; line = p.NextLine() {
-		r.SourceFiles = append(r.SourceFiles, filepath.Join(r.SourceDir, line))
+		r.SourceFiles = append(r.SourceFiles, r.JoinSourceDir(line))
 	}
 
 	r.ObjectDir = filepath.Join(r.Path, ".bchef/obj")
@@ -79,5 +91,5 @@ func (r Recipe) pathToObject(path string) string {
 		}
 	}
 
-	return filepath.Join(r.ObjectDir, string(result)+".o")
+	return r.JoinObjectDir(string(result) + ".o")
 }

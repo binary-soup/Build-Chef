@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+
+	"github.com/binary-soup/bchef/recipe"
 )
 
 var includeRegex = regexp.MustCompile(`^#include "([^"]+.(h|hxx))"$`)
@@ -25,16 +27,16 @@ type sourceTracker struct {
 	mods     map[string]int64
 }
 
-func (t *sourceTracker) LoadCache(path string) {
+func (t *sourceTracker) LoadCache(r *recipe.Recipe) {
 	t.cache = sourceCache{}
-	t.cache.Load(path)
+	t.cache.Load(r)
 }
 
-func (t *sourceTracker) SaveCache(path string) {
+func (t *sourceTracker) SaveCache(r *recipe.Recipe) {
 	for file, includes := range t.includes {
 		t.cache.UpdateEntry(file, t.getMod(file), includes)
 	}
-	t.cache.Save(path)
+	t.cache.Save(r)
 }
 
 func (t sourceTracker) NeedsCompiling(src string, obj string) bool {
