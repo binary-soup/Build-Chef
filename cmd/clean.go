@@ -8,24 +8,45 @@ import (
 	"github.com/binary-soup/bchef/style"
 )
 
-type CleanCmd struct{}
-
-func (CleanCmd) removeFile(r *recipe.Recipe, file string, deleteStyle style.Style) {
-	if err := os.Remove(file); err == nil {
-		deleteStyle.Println(INDENT + "x " + r.TrimObjectDir(file))
+func NewCleanCommand() CleanCommand {
+	return CleanCommand{
+		command: newCommand("clean", "remove all created files"),
 	}
 }
 
-func (cmd CleanCmd) Run(r *recipe.Recipe) bool {
-	style.Header.Println("Doing the Dishes...")
+type CleanCommand struct {
+	command
+}
 
-	os.Remove(compiler.SOURCE_CACHE_FILE)
+func (cmd CleanCommand) Run(args []string) error {
+	path := cmd.pathFlag()
+	cmd.parseFlags(args)
+
+	r, err := cmd.loadRecipe(*path)
+	if err != nil {
+		return err
+	}
+
+	cmd.clean(r)
+	return nil
+}
+
+func (cmd CleanCommand) clean(r *recipe.Recipe) {
+	style.Header.Println("Doing the Dishes...")
 
 	for _, obj := range r.ObjectFiles {
 		cmd.removeFile(r, obj, style.Delete)
 	}
-	cmd.removeFile(r, r.Name, style.BoldDelete)
+	cmd.removeFile(r, r.Executable, style.BoldDelete)
+
+	os.Remove(CompileLogFile(r.Path))
+	os.Remove(compiler.SourceCacheFile(r.Path))
 
 	style.BoldSuccess.Println("Squeaky Clean!")
-	return true
+}
+
+func (CleanCommand) removeFile(r *recipe.Recipe, file string, deleteStyle style.Style) {
+	if err := os.Remove(file); err == nil {
+		deleteStyle.Println(INDENT + "x " + r.TrimObjectDir(file))
+	}
 }

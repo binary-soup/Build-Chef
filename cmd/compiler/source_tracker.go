@@ -25,16 +25,16 @@ type sourceTracker struct {
 	mods     map[string]int64
 }
 
-func (t *sourceTracker) LoadCache() {
+func (t *sourceTracker) LoadCache(path string) {
 	t.cache = sourceCache{}
-	t.cache.Load()
+	t.cache.Load(path)
 }
 
-func (t *sourceTracker) SaveCache() {
+func (t *sourceTracker) SaveCache(path string) {
 	for file, includes := range t.includes {
 		t.cache.UpdateEntry(file, t.getMod(file), includes)
 	}
-	t.cache.Save()
+	t.cache.Save(path)
 }
 
 func (t sourceTracker) NeedsCompiling(src string, obj string) bool {

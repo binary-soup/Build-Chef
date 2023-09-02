@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/binary-soup/bchef/recipe"
 	"github.com/binary-soup/bchef/style"
@@ -21,8 +22,8 @@ type Compiler struct {
 func (c Compiler) CompileObjects() bool {
 	tracker := newTracker(c.Recipe.SourceDir)
 
-	tracker.LoadCache()
-	defer tracker.SaveCache()
+	tracker.LoadCache(c.Recipe.Path)
+	defer tracker.SaveCache(c.Recipe.Path)
 
 	for i, src := range c.Recipe.SourceFiles {
 		obj := c.Recipe.ObjectFiles[i]
@@ -45,13 +46,13 @@ func (c Compiler) compileObject(src string, obj string, percent float32) bool {
 func (c Compiler) CompileExecutable() bool {
 	style.FileV2.Printf("%s+ [%d] objects\n", c.Indent, len(c.Recipe.ObjectFiles))
 
-	sources := append([]string{"main.cxx"}, c.Recipe.ObjectFiles...)
-	return c.compile(style.BoldCreate, 1.0, []string{}, c.Recipe.Name, sources...)
+	sources := append([]string{filepath.Join(c.Recipe.Path, "main.cxx")}, c.Recipe.ObjectFiles...)
+	return c.compile(style.BoldCreate, 1.0, []string{}, c.Recipe.Executable, sources...)
 }
 
 func (c Compiler) compile(createStyle style.Style, percent float32, flags []string, out string, sources ...string) bool {
 	style.BoldInfo.Printf("%s[%3d%%] ", c.Indent, int(percent*100))
-	style.FileV1.Print(c.Recipe.TrimSourceDir(sources[0]))
+	style.File.Print(c.Recipe.TrimSourceDir(sources[0]))
 	fmt.Print(" -> ")
 
 	args := append(compileFlags, "-I", c.Recipe.SourceDir)

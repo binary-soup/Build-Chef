@@ -3,6 +3,7 @@ package cmd
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/binary-soup/bchef/cmd/compiler"
 	"github.com/binary-soup/bchef/recipe"
@@ -12,27 +13,37 @@ import (
 // NOTE: add -g for debug
 // TODO: handle command injection
 
-const (
-	COMPILE_LOG_FILE = ".bchef/compile_log.txt"
-)
-
-type CookCmd struct{}
-
-func (CookCmd) fail(log *log.Logger, message string) bool {
-	log.Println("[Compilation Failed]")
-	style.BoldError.Println(message)
-	return false
+func CompileLogFile(path string) string {
+	return filepath.Join(path, ".bchef/compile_log.txt")
 }
 
-func (CookCmd) pass(log *log.Logger, message string) bool {
-	log.Println("[Compilation Success]")
-	style.BoldSuccess.Println(message)
-	return true
+func NewCookCommand() CookCommand {
+	return CookCommand{
+		command: newCommand("cook", "compile the project"),
+	}
 }
 
-func (c CookCmd) Run(r *recipe.Recipe) bool {
-	os.MkdirAll(recipe.OBJECT_DIR, 0755)
-	file, _ := os.Create(COMPILE_LOG_FILE)
+type CookCommand struct {
+	command
+}
+
+func (cmd CookCommand) Run(args []string) error {
+	path := cmd.pathFlag()
+	cmd.parseFlags(args)
+
+	r, err := cmd.loadRecipe(*path)
+	if err != nil {
+		return err
+	}
+
+	cmd.cook(r)
+	return nil
+}
+
+func (cmd CookCommand) cook(r *recipe.Recipe) bool {
+	os.MkdirAll(r.ObjectDir, 0755)
+
+	file, _ := os.Create(CompileLogFile(r.Path))
 	defer file.Close()
 
 	log := log.New(file, "", log.Ltime)
@@ -42,13 +53,25 @@ func (c CookCmd) Run(r *recipe.Recipe) bool {
 
 	style.Header.Println("Prepping...")
 	if ok := com.CompileObjects(); !ok {
-		return c.fail(log, "Bad Ingredients!")
+		return cmd.fail(log, "Bad Ingredients!")
 	}
 
 	style.Header.Println("Cooking...")
 	if ok := com.CompileExecutable(); !ok {
-		return c.fail(log, "Burnt!")
+		return cmd.fail(log, "Burnt!")
 	}
 
-	return c.pass(log, "Bon Appétit!")
+	return cmd.pass(log, "Bon Appétit!")
+}
+
+func (CookCommand) fail(log *log.Logger, message string) bool {
+	log.Println("[Compilation Failed]")
+	style.BoldError.Println(message)
+	return false
+}
+
+func (CookCommand) pass(log *log.Logger, message string) bool {
+	log.Println("[Compilation Success]")
+	style.BoldSuccess.Println(message)
+	return true
 }

@@ -1,44 +1,81 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
 	"github.com/binary-soup/bchef/cmd"
-	"github.com/binary-soup/bchef/recipe"
 	"github.com/binary-soup/bchef/style"
 )
 
-var cmds = map[string]cmd.Command{
-	"cook":  cmd.CookCmd{},
-	"clean": cmd.CleanCmd{},
-}
+const (
+	VERSION = "v0.1.0-alpha"
+)
 
-func RunCommand(name string) error {
-	r, err := recipe.Load(".")
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Recipe loaded from", style.BoldFileV2.Format(r.Path))
-
-	cmd, exists := cmds[name]
-	if !exists {
-		return fmt.Errorf("unknown command \"%s\"", name)
-	}
-
-	cmd.Run(r)
-	return nil
+var cmds = []cmd.Command{
+	cmd.NewCookCommand(),
+	cmd.NewCleanCommand(),
 }
 
 func main() {
+	if handleFlags() {
+		return
+	}
+
 	if len(os.Args) < 2 {
-		// TODO: print help
 		fmt.Println("no command given")
 		return
 	}
 
-	if err := RunCommand(os.Args[1]); err != nil {
+	if err := runCommand(os.Args[1], os.Args[2:]); err != nil {
 		fmt.Println(style.BoldError.Format("Error:"), err)
 	}
+}
+
+func handleFlags() bool {
+	version := flag.Bool("v", false, "version info")
+	list := flag.Bool("ls", false, "list commands")
+
+	flag.Usage = usage
+	flag.Parse()
+
+	if *version {
+		fmt.Println(styledVersion())
+		return true
+	}
+
+	if *list {
+		printCommands()
+		return true
+	}
+
+	return false
+}
+
+func usage() {
+	fmt.Printf("%s (%s) ~ Build a c++ project using recipe files\n%s\n",
+		style.BoldInfoV2.Format("Build Chef"), styledVersion(), style.BoldFileV2.Format("Options:"))
+
+	flag.PrintDefaults()
+}
+
+func styledVersion() string {
+	return style.File.Format(VERSION)
+}
+
+func printCommands() {
+	for _, cmd := range cmds {
+		cmd.PrintUsage()
+	}
+}
+
+func runCommand(name string, args []string) error {
+	for _, cmd := range cmds {
+		if cmd.GetName() == name {
+			return cmd.Run(args)
+		}
+	}
+	return fmt.Errorf("unknown command \"%s\"", name)
+
 }
