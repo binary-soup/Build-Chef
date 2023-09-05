@@ -2,7 +2,9 @@
 
 |EXECUTABLE program main.cxx
 
-|SOURCES src/
+|SOURCES src1/
     file1.cxx
+
+|SOURCES src2/
     file2.cxx
     file3.cxx

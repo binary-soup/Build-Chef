@@ -97,6 +97,10 @@ func (r *Recipe) parseKeyword(p *parser.Parser, keyword string, tokens []string)
 }
 
 func (r *Recipe) parseExecutable(p *parser.Parser, tokens []string) error {
+	if len(r.Executable) > 0 {
+		return p.Error("duplicate executable keyword")
+	}
+
 	if len(tokens) < 1 || len(tokens[0]) == 0 {
 		return p.Error("missing or empty executable name")
 	}
