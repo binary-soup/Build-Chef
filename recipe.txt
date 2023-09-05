@@ -1,0 +1,8 @@
+# For testing parsing only. Will not compile.
+
+|EXECUTABLE program main.cxx
+
+|SOURCES src/
+    file1.cxx
+    file2.cxx
+    file3.cxx

@@ -16,7 +16,7 @@ const (
 var cmds = []cmd.Command{
 	cmd.NewCleanCommand(),
 	cmd.NewCookCommand(),
-	cmd.NewInfoCommand(),
+	cmd.NewReviewCommand(),
 }
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 	}
 
 	if err := runCommand(os.Args[1], os.Args[2:]); err != nil {
-		fmt.Println(style.BoldError.Format("Error:"), err)
+		fmt.Println(style.BoldError.String("Error:"), err)
 	}
 }
 
@@ -56,13 +56,13 @@ func handleFlags() bool {
 
 func usage() {
 	fmt.Printf("%s (%s) ~ Build a c++ project using recipe files\n%s\n",
-		style.BoldInfoV2.Format("Build Chef"), styledVersion(), style.BoldFileV2.Format("Options:"))
+		style.BoldInfoV2.String("Build Chef"), styledVersion(), style.BoldFileV2.String("Options:"))
 
 	flag.PrintDefaults()
 }
 
 func styledVersion() string {
-	return style.File.Format(VERSION)
+	return style.File.String(VERSION)
 }
 
 func printCommands() {

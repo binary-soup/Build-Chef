@@ -28,9 +28,9 @@ func (c sourceCache) Load(r *recipe.Recipe) {
 	}
 
 	defer file.Close()
-	p := parser.New(file)
+	p := parser.New(file, 0)
 
-	for line := p.NextLine(); len(line) > 0; line = p.NextLine() {
+	for line, hasNext := p.Next(); hasNext; line, hasNext = p.Next() {
 		tokens := strings.Split(line, ",")
 
 		includes := []string{}

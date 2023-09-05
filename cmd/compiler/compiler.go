@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 
 	"github.com/binary-soup/bchef/recipe"
 	"github.com/binary-soup/bchef/style"
@@ -50,7 +49,7 @@ func (c Compiler) CompileExecutable() bool {
 	count := len(c.Recipe.ObjectFiles)
 	style.InfoV2.Printf("%s+ [%d] %s\n", c.Indent, count, style.SelectPlural("object", "objects", count))
 
-	sources := append([]string{filepath.Join(c.Recipe.Path, "main.cxx")}, c.Recipe.ObjectFiles...)
+	sources := append([]string{c.Recipe.ExecutableSource}, c.Recipe.ObjectFiles...)
 	return c.compile(style.BoldCreate, 1.0, []string{}, c.Recipe.Path, c.Recipe.Executable, c.Recipe.Path, sources...)
 }
 
