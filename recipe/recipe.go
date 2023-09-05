@@ -91,6 +91,12 @@ func (r *Recipe) parseKeyword(p *parser.Parser, keyword string, tokens []string)
 		return r.parseExecutable(p, tokens)
 	case "SOURCES":
 		return r.parseSources(p, tokens)
+	case "INCLUDES":
+		return r.parseIncludes(p)
+	case "LIBRARIES":
+		return r.parseLibraries(p, tokens)
+	case "PACKAGE":
+		return r.parsePackage(p, tokens)
 	default:
 		return p.Errorf("unknown keyword \"%s\"", keyword)
 	}
@@ -129,6 +135,18 @@ func (r *Recipe) parseSources(p *parser.Parser, tokens []string) error {
 
 	p.Rewind(1)
 	return nil
+}
+
+func (r *Recipe) parseIncludes(p *parser.Parser) error {
+	return nil //TODO: implement
+}
+
+func (r *Recipe) parseLibraries(p *parser.Parser, tokens []string) error {
+	return nil //TODO: implement
+}
+
+func (r *Recipe) parsePackage(p *parser.Parser, tokens []string) error {
+	return nil //TODO: implement
 }
 
 func (r Recipe) srcToObject(path string) string {
