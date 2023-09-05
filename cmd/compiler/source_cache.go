@@ -38,10 +38,10 @@ func (c sourceCache) Load(r *recipe.Recipe) {
 			if len(token) == 0 {
 				continue
 			}
-			includes = append(includes, r.JoinSourceDir(token))
+			includes = append(includes, r.JoinPath(token))
 		}
 
-		c[r.JoinSourceDir(tokens[0])] = sourceInfo{
+		c[r.JoinPath(tokens[0])] = sourceInfo{
 			Mod:      c.parseMod(tokens[1]),
 			Includes: includes,
 		}
@@ -61,10 +61,10 @@ func (c sourceCache) Save(r *recipe.Recipe) {
 	defer file.Close()
 
 	for key, val := range c {
-		fmt.Fprintf(file, "%s,%d,", r.TrimSourceDir(key), val.Mod)
+		fmt.Fprintf(file, "%s,%d,", r.TrimPath(key), val.Mod)
 
 		for _, include := range val.Includes {
-			fmt.Fprintf(file, "%s,", r.TrimSourceDir(include))
+			fmt.Fprintf(file, "%s,", r.TrimPath(include))
 		}
 		fmt.Fprintln(file)
 	}

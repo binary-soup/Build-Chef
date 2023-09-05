@@ -22,7 +22,7 @@ func (c Compiler) CompileObjects() bool {
 	indices := c.calcChangedSources()
 
 	for i, index := range indices {
-		if ok := c.compileObject(c.Recipe.SourceFiles[index], c.Recipe.ObjectFiles[index], float32(i+1)/float32(len(indices))); !ok {
+		if ok := c.compileObject(c.Recipe.SourceFiles[index], c.Recipe.ObjectFiles[index], float32(i)/float32(len(indices))); !ok {
 			return false
 		}
 	}
@@ -30,7 +30,7 @@ func (c Compiler) CompileObjects() bool {
 }
 
 func (c Compiler) calcChangedSources() []int {
-	tracker := newTracker(c.Recipe.SourceDir)
+	tracker := newTracker(c.Recipe.Path)
 
 	tracker.LoadCache(c.Recipe)
 	defer tracker.SaveCache(c.Recipe)
@@ -42,7 +42,7 @@ func (c Compiler) calcChangedSources() []int {
 }
 
 func (c Compiler) compileObject(src string, obj string, percent float32) bool {
-	return c.compile(style.Create, percent, []string{"-c"}, c.Recipe.ObjectDir, obj, c.Recipe.SourceDir, src)
+	return c.compile(style.Create, percent, []string{"-c"}, c.Recipe.ObjectDir, obj, c.Recipe.Path, src)
 }
 
 func (c Compiler) CompileExecutable() bool {
@@ -58,7 +58,7 @@ func (c Compiler) compile(createStyle style.Style, percent float32, flags []stri
 	style.File.Print(c.Recipe.TrimDir(srcDir, sources[0]))
 	fmt.Print(" -> ")
 
-	args := append(compileFlags, "-I", c.Recipe.SourceDir)
+	args := append(compileFlags, "-I", c.Recipe.Path)
 	args = append(args, flags...)
 	args = append(args, sources...)
 	args = append(args, "-o", out)

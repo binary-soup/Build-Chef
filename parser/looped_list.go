@@ -21,6 +21,10 @@ func (l LoopedList[T]) Get(i int) T {
 }
 
 func (l *LoopedList[T]) Push(val T) {
+	if l.Size() == 0 {
+		return
+	}
+
 	l.data[l.start] = val
 	l.start = (l.start + 1) % l.Size()
 }

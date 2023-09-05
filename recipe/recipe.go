@@ -21,25 +21,25 @@ func Load(path string) (*Recipe, error) {
 	defer file.Close()
 
 	r := Recipe{
-		Path: filepath.Dir(path),
-		Name: filepath.Base(path),
+		Path:        filepath.Dir(path),
+		Name:        filepath.Base(path),
+		SourceFiles: []string{},
+		ObjectFiles: []string{},
 	}
-	err = r.parse(file)
+	r.ObjectDir = filepath.Join(r.Path, ".bchef/obj")
 
-	return &r, err
+	return &r, r.parse(file)
 }
 
 type Recipe struct {
-	Path string
-	Name string
+	Name      string
+	Path      string
+	ObjectDir string
 
 	Executable       string
 	ExecutableSource string
 
-	SourceDir   string
 	SourceFiles []string
-
-	ObjectDir   string
 	ObjectFiles []string
 }
 
@@ -47,12 +47,12 @@ func (Recipe) TrimDir(dir string, file string) string {
 	return strings.TrimPrefix(file, dir+"/")
 }
 
-func (r Recipe) JoinSourceDir(src string) string {
-	return filepath.Join(r.SourceDir, src)
+func (r Recipe) JoinPath(src string) string {
+	return filepath.Join(r.Path, src)
 }
 
-func (r Recipe) TrimSourceDir(src string) string {
-	return r.TrimDir(r.SourceDir, src)
+func (r Recipe) TrimPath(src string) string {
+	return r.TrimDir(r.Path, src)
 }
 
 func (r Recipe) JoinObjectDir(obj string) string {
@@ -111,28 +111,23 @@ func (r *Recipe) parseExecutable(p *parser.Parser, tokens []string) error {
 }
 
 func (r *Recipe) parseSources(p *parser.Parser, tokens []string) error {
-	dir := "."
+	srcDir := "."
 	if len(tokens) > 0 {
-		dir = tokens[0]
+		srcDir = tokens[0]
 	}
-	r.SourceDir = filepath.Join(r.Path, strings.TrimRight(dir, "/"))
 
 	for line, hasNext := p.Next(); hasNext && line[0] != '|'; line, hasNext = p.Next() {
-		r.SourceFiles = append(r.SourceFiles, r.JoinSourceDir(line))
-	}
+		src := filepath.Join(srcDir, line)
 
-	r.ObjectDir = filepath.Join(r.Path, ".bchef/obj")
-
-	r.ObjectFiles = make([]string, len(r.SourceFiles))
-	for i, src := range r.SourceFiles {
-		r.ObjectFiles[i] = r.pathToObject(r.TrimSourceDir(src))
+		r.SourceFiles = append(r.SourceFiles, r.JoinPath(src))
+		r.ObjectFiles = append(r.ObjectFiles, r.JoinObjectDir(r.srcToObject(src)))
 	}
 
 	p.Rewind(1)
 	return nil
 }
 
-func (r Recipe) pathToObject(path string) string {
+func (r Recipe) srcToObject(path string) string {
 	result := make([]rune, len(path))
 
 	for i, char := range path {
@@ -143,5 +138,5 @@ func (r Recipe) pathToObject(path string) string {
 		}
 	}
 
-	return r.JoinObjectDir(string(result) + ".o")
+	return string(result) + ".o"
 }
