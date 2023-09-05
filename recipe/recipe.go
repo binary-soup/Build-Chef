@@ -36,8 +36,8 @@ type Recipe struct {
 	Path      string
 	ObjectDir string
 
-	Executable       string
-	ExecutableSource string
+	Executable string
+	MainSource string
 
 	SourceFiles []string
 	ObjectFiles []string
@@ -107,9 +107,9 @@ func (r *Recipe) parseExecutable(p *parser.Parser, tokens []string) error {
 	r.Executable = filepath.Join(r.Path, tokens[0])
 
 	if len(tokens) < 2 || len(tokens[1]) == 0 {
-		return p.Error("missing or empty executable source")
+		return p.Error("missing or empty main source")
 	}
-	r.ExecutableSource = filepath.Join(r.Path, tokens[1])
+	r.MainSource = filepath.Join(r.Path, tokens[1])
 
 	return nil
 }

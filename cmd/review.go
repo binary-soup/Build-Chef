@@ -35,7 +35,7 @@ func (cmd ReviewCommand) info(r *recipe.Recipe) {
 	style.BoldCreate.Println(r.Executable)
 
 	style.Info.Print(INDENT + "Source: ")
-	style.File.Println(r.ExecutableSource)
+	style.File.Println(r.MainSource)
 
 	style.Header.Println("Source Files:")
 	for _, src := range r.SourceFiles {
