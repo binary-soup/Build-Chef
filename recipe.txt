@@ -8,3 +8,14 @@
 |SOURCES src2/
     file2.cxx
     file3.cxx
+
+|INCLUDES
+    include/path/1
+    include/path/2
+
+|LIBRARIES lib/path/1
+    lib1
+
+|LIBRARIES lib/path/2
+    lib2.1
+    lib2.2

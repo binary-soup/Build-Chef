@@ -21,12 +21,17 @@ func Load(path string) (*Recipe, error) {
 	defer file.Close()
 
 	r := Recipe{
-		Path:        filepath.Dir(path),
-		Name:        filepath.Base(path),
-		SourceFiles: []string{},
-		ObjectFiles: []string{},
+		Path:         filepath.Dir(path),
+		Name:         filepath.Base(path),
+		SourceFiles:  []string{},
+		ObjectFiles:  []string{},
+		Includes:     []string{},
+		LibraryPaths: []string{},
+		Libraries:    []string{},
 	}
+
 	r.ObjectDir = filepath.Join(r.Path, ".bchef/obj")
+	r.Includes = append(r.Includes, r.Path)
 
 	return &r, r.parse(file)
 }
@@ -41,6 +46,11 @@ type Recipe struct {
 
 	SourceFiles []string
 	ObjectFiles []string
+
+	Includes []string
+
+	LibraryPaths []string
+	Libraries    []string
 }
 
 func (Recipe) TrimDir(dir string, file string) string {
@@ -120,29 +130,43 @@ func (r *Recipe) parseExecutable(p *parser.Parser, tokens []string) error {
 	return nil
 }
 
-func (r *Recipe) parseSources(p *parser.Parser, tokens []string) error {
-	srcDir := "."
-	if len(tokens) > 0 {
-		srcDir = tokens[0]
-	}
-
+func (r *Recipe) whileNotKeyword(p *parser.Parser, do func(string)) error {
 	for line, hasNext := p.Next(); hasNext && line[0] != '|'; line, hasNext = p.Next() {
-		src := filepath.Join(srcDir, line)
-
-		r.SourceFiles = append(r.SourceFiles, r.JoinPath(src))
-		r.ObjectFiles = append(r.ObjectFiles, r.JoinObjectDir(r.srcToObject(src)))
+		do(line)
 	}
 
 	p.Rewind(1)
 	return nil
 }
 
+func (r *Recipe) parseSources(p *parser.Parser, tokens []string) error {
+	srcDir := "."
+	if len(tokens) > 0 {
+		srcDir = tokens[0]
+	}
+
+	return r.whileNotKeyword(p, func(line string) {
+		src := filepath.Join(srcDir, line)
+
+		r.SourceFiles = append(r.SourceFiles, r.JoinPath(src))
+		r.ObjectFiles = append(r.ObjectFiles, r.JoinObjectDir(r.srcToObject(src)))
+	})
+}
+
 func (r *Recipe) parseIncludes(p *parser.Parser) error {
-	return nil //TODO: implement
+	return r.whileNotKeyword(p, func(line string) {
+		r.Includes = append(r.Includes, line)
+	})
 }
 
 func (r *Recipe) parseLibraries(p *parser.Parser, tokens []string) error {
-	return nil //TODO: implement
+	if len(tokens) > 0 && len(tokens[0]) > 0 {
+		r.LibraryPaths = append(r.LibraryPaths, tokens[0])
+	}
+
+	return r.whileNotKeyword(p, func(line string) {
+		r.Libraries = append(r.Libraries, line)
+	})
 }
 
 func (r *Recipe) parsePackage(p *parser.Parser, tokens []string) error {

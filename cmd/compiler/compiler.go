@@ -1,87 +1,67 @@
 package compiler
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
 
 	"github.com/binary-soup/bchef/recipe"
-	"github.com/binary-soup/bchef/style"
 )
 
-var compileFlags = []string{"-Wall", "-std=c++17"}
+func NewCompiler(log *log.Logger, impl CompilerImpl) Compiler {
+	return Compiler{
+		Log:  log,
+		Impl: impl,
+	}
+}
+
+type CompilerImpl interface {
+	CompileObject(src string, obj string) *exec.Cmd
+	CompileExecutable(src string, exec string, objs ...string) *exec.Cmd
+}
 
 type Compiler struct {
-	Indent string
-	Log    *log.Logger
-	Recipe *recipe.Recipe
+	Log  *log.Logger
+	Impl CompilerImpl
 }
 
-func (c Compiler) CompileObjects() bool {
-	indices := c.calcChangedSources()
+func (Compiler) ComputeChangedSources(r *recipe.Recipe) []int {
+	tracker := newTracker(r.Path)
 
-	for i, index := range indices {
-		if ok := c.compileObject(c.Recipe.SourceFiles[index], c.Recipe.ObjectFiles[index], float32(i)/float32(len(indices))); !ok {
-			return false
-		}
-	}
-	return true
-}
+	tracker.LoadCache(r)
+	defer tracker.SaveCache(r)
 
-func (c Compiler) calcChangedSources() []int {
-	tracker := newTracker(c.Recipe.Path)
-
-	tracker.LoadCache(c.Recipe)
-	defer tracker.SaveCache(c.Recipe)
-
-	indices := tracker.CalcChangedIndices(c.Recipe.SourceFiles, c.Recipe.ObjectFiles)
-	style.InfoV2.Printf("%s+ [%d] changed %s\n", c.Indent, len(indices), style.SelectPlural("source", "sources", len(indices)))
+	indices := tracker.CalcChangedIndices(r.SourceFiles, r.ObjectFiles)
 
 	return indices
 }
 
-func (c Compiler) compileObject(src string, obj string, percent float32) bool {
-	return c.compile(style.Create, percent, []string{"-c"}, c.Recipe.ObjectDir, obj, c.Recipe.Path, src)
+func (c Compiler) CompileObject(src string, obj string) bool {
+	cmd := c.Impl.CompileObject(src, obj)
+	res := c.runCommand(cmd)
+
+	c.logCommand(cmd.String(), src, 0, res)
+	return res
 }
 
-func (c Compiler) CompileExecutable() bool {
-	count := len(c.Recipe.ObjectFiles)
-	style.InfoV2.Printf("%s+ [%d] %s\n", c.Indent, count, style.SelectPlural("object", "objects", count))
+func (c Compiler) CompileExecutable(src string, exec string, objs ...string) bool {
+	cmd := c.Impl.CompileExecutable(src, exec, objs...)
+	res := c.runCommand(cmd)
 
-	sources := append([]string{c.Recipe.MainSource}, c.Recipe.ObjectFiles...)
-	return c.compile(style.BoldCreate, 1.0, []string{}, c.Recipe.Path, c.Recipe.Executable, c.Recipe.Path, sources...)
+	c.logCommand(cmd.String(), src, len(objs), res)
+	return res
 }
 
-func (c Compiler) compile(createStyle style.Style, percent float32, flags []string, outDir string, out string, srcDir string, sources ...string) bool {
-	style.BoldInfo.Printf("%s[%3d%%] ", c.Indent, int(percent*100))
-	style.File.Print(c.Recipe.TrimDir(srcDir, sources[0]))
-	fmt.Print(" -> ")
-
-	args := append(compileFlags, "-I", c.Recipe.Path)
-	args = append(args, flags...)
-	args = append(args, sources...)
-	args = append(args, "-o", out)
-
-	cmd := exec.Command("g++", args...)
+func (c Compiler) runCommand(cmd *exec.Cmd) bool {
 	cmd.Stderr = os.Stdout
+	err := cmd.Run()
 
-	_, err := cmd.Run().(*exec.ExitError)
-	if !err {
-		createStyle.Println(c.Recipe.TrimDir(outDir, out))
-	}
-
-	c.logCommand(cmd.String(), sources[0], len(sources)-1, !err)
-	return !err
+	_, ok := err.(*exec.ExitError)
+	return !ok
 }
 
 func (c Compiler) logCommand(cmdStr string, src string, numObjs int, res bool) {
-	log := "[Compile " + src
-
-	if numObjs > 0 {
-		log += fmt.Sprintf(" + (%d) objects", numObjs)
-	}
-	log += "] "
+	log := "[Compile " + src + "] "
 
 	if res {
 		log += "PASS"
