@@ -10,9 +10,7 @@ import (
 	"github.com/binary-soup/bchef/parser"
 )
 
-func SourceCacheFile(path string) string {
-	return filepath.Join(path, ".bchef/source_cache.txt")
-}
+const SOURCE_CACHE_FILE = ".bchef/source_cache.txt"
 
 type sourceInfo struct {
 	Mod      int64
@@ -21,7 +19,7 @@ type sourceInfo struct {
 type sourceCache map[string]sourceInfo
 
 func (c sourceCache) Load(path string) {
-	file, err := os.Open(SourceCacheFile(path))
+	file, err := os.Open(c.cacheFile(path))
 	if err != nil {
 		return
 	}
@@ -47,6 +45,10 @@ func (c sourceCache) Load(path string) {
 	}
 }
 
+func (sourceCache) cacheFile(path string) string {
+	return filepath.Join(path, SOURCE_CACHE_FILE)
+}
+
 func (c sourceCache) parseMod(token string) int64 {
 	num, err := strconv.ParseInt(token, 10, 64)
 	if err != nil {
@@ -56,7 +58,7 @@ func (c sourceCache) parseMod(token string) int64 {
 }
 
 func (c sourceCache) Save(path string) {
-	file, _ := os.Create(SourceCacheFile(path))
+	file, _ := os.Create(c.cacheFile(path))
 	defer file.Close()
 
 	for key, val := range c {

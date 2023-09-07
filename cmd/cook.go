@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/binary-soup/bchef/cmd/compiler"
 	"github.com/binary-soup/bchef/cmd/compiler/gxx"
@@ -14,9 +13,7 @@ import (
 
 // TODO: fix command injection
 
-func CompileLogFile(path string) string {
-	return filepath.Join(path, ".bchef/compile_log.txt")
-}
+const COMPILE_LOG_FILE = ".bchef/compile_log.txt"
 
 func NewCookCommand() CookCommand {
 	return CookCommand{
@@ -44,7 +41,7 @@ func (cmd CookCommand) Run(args []string) error {
 
 func (cmd CookCommand) cook(r *recipe.Recipe, debug bool) bool {
 	os.MkdirAll(r.GetObjectPath(debug), 0755)
-	file, _ := os.Create(CompileLogFile(r.Path))
+	file, _ := os.Create(r.JoinPath(COMPILE_LOG_FILE))
 
 	defer file.Close()
 	log := log.New(file, "", log.Ltime)
