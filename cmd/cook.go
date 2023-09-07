@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/binary-soup/bchef/cmd/compiler"
 	"github.com/binary-soup/bchef/cmd/compiler/gxx"
+	"github.com/binary-soup/bchef/config"
 	"github.com/binary-soup/bchef/recipe"
 	"github.com/binary-soup/bchef/style"
 )
@@ -25,7 +27,7 @@ type CookCommand struct {
 	command
 }
 
-func (cmd CookCommand) Run(args []string) error {
+func (cmd CookCommand) Run(cfg config.Config, args []string) error {
 	path := cmd.pathFlag()
 	debug := cmd.flagSet.Bool("d", false, "build in debug mode")
 	cmd.parseFlags(args)
@@ -35,21 +37,36 @@ func (cmd CookCommand) Run(args []string) error {
 		return err
 	}
 
-	cmd.cook(r, *debug)
-	return nil
+	return cmd.cook(r, cfg.Compiler, *debug)
 }
 
-func (cmd CookCommand) cook(r *recipe.Recipe, debug bool) bool {
+func (cmd CookCommand) cook(r *recipe.Recipe, compilerName string, debug bool) error {
 	os.MkdirAll(r.GetObjectPath(debug), 0755)
 	file, _ := os.Create(r.JoinPath(COMPILE_LOG_FILE))
 
 	defer file.Close()
 	log := log.New(file, "", log.Ltime)
 
-	gxx := gxx.NewGXXCompiler(r.Includes, r.LibraryPaths, r.Libraries)
-	com := compiler.NewCompiler(log, gxx, cmd.createCompilerOptions(debug))
+	impl, err := cmd.chooseCompiler(r, compilerName)
+	if err != nil {
+		return err
+	}
 
-	return cmd.compile(r, log, com)
+	com := compiler.NewCompiler(log, impl, cmd.createCompilerOptions(debug))
+	cmd.compile(r, log, com)
+
+	return nil
+}
+
+func (CookCommand) chooseCompiler(r *recipe.Recipe, compilerName string) (compiler.CompilerImpl, error) {
+	switch compilerName {
+	case "g++":
+		return gxx.NewGXXCompiler(r.Includes, r.LibraryPaths, r.Libraries), nil
+	case "":
+		return nil, errors.New("empty compiler")
+	default:
+		return nil, fmt.Errorf("unsupported compiler \"%s\"", compilerName)
+	}
 }
 
 func (CookCommand) createCompilerOptions(debug bool) compiler.Options {

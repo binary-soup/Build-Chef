@@ -1,11 +1,13 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
 
 	"github.com/binary-soup/bchef/cmd"
+	"github.com/binary-soup/bchef/config"
 	"github.com/binary-soup/bchef/style"
 )
 
@@ -29,8 +31,14 @@ func main() {
 		return
 	}
 
-	if err := runCommand(os.Args[1], os.Args[2:]); err != nil {
-		fmt.Println(style.BoldError.String("Error:"), err)
+	cfg, err := config.Load()
+	if err != nil {
+		printError(errors.Join(errors.New("error loading config"), err))
+		return
+	}
+
+	if err = runCommand(os.Args[1], cfg, os.Args[2:]); err != nil {
+		printError(err)
 	}
 }
 
@@ -71,12 +79,15 @@ func printCommands() {
 	}
 }
 
-func runCommand(name string, args []string) error {
+func runCommand(name string, cfg config.Config, args []string) error {
 	for _, cmd := range cmds {
 		if cmd.GetName() == name {
-			return cmd.Run(args)
+			return cmd.Run(cfg, args)
 		}
 	}
 	return fmt.Errorf("unknown command \"%s\"", name)
+}
 
+func printError(err error) {
+	fmt.Println(style.BoldError.String("Error:"), err)
 }

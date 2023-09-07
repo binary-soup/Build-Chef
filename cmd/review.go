@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/binary-soup/bchef/config"
 	"github.com/binary-soup/bchef/recipe"
 	"github.com/binary-soup/bchef/style"
 )
@@ -20,7 +21,7 @@ type ReviewCommand struct {
 	verify bool
 }
 
-func (cmd ReviewCommand) Run(args []string) error {
+func (cmd ReviewCommand) Run(cfg config.Config, args []string) error {
 	path := cmd.pathFlag()
 	verify := cmd.flagSet.Bool("verify", false, "verify filepaths are correct")
 	cmd.parseFlags(args)
@@ -31,12 +32,12 @@ func (cmd ReviewCommand) Run(args []string) error {
 	}
 
 	cmd.verify = *verify
-	cmd.review(r)
+	cmd.review(r, cfg.SystemPaths)
 
 	return nil
 }
 
-func (cmd ReviewCommand) review(r *recipe.Recipe) {
+func (cmd ReviewCommand) review(r *recipe.Recipe, systemPaths []string) {
 	style.Header.Println("Executable:")
 	cmd.reviewExecutable(r, r.Executable)
 	cmd.reviewSourceFile(r, r.MainSource)
@@ -58,7 +59,7 @@ func (cmd ReviewCommand) review(r *recipe.Recipe) {
 
 	style.Header.Println("Libraries:")
 	for _, lib := range r.Libraries {
-		cmd.reviewLibrary(lib, append(r.LibraryPaths, "."))
+		cmd.reviewLibrary(lib, append(systemPaths, r.LibraryPaths...))
 	}
 }
 

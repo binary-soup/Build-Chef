@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/binary-soup/bchef/cmd/compiler"
+	"github.com/binary-soup/bchef/config"
 	"github.com/binary-soup/bchef/recipe"
 	"github.com/binary-soup/bchef/style"
 )
@@ -19,7 +20,7 @@ type CleanCommand struct {
 	command
 }
 
-func (cmd CleanCommand) Run(args []string) error {
+func (cmd CleanCommand) Run(_ config.Config, args []string) error {
 	path := cmd.pathFlag()
 	cache := cmd.flagSet.Bool("cache", false, "also delete cache files")
 	cmd.parseFlags(args)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/binary-soup/bchef/config"
 	"github.com/binary-soup/bchef/recipe"
 	"github.com/binary-soup/bchef/style"
 )
@@ -25,7 +26,7 @@ func newCommand(name string, description string) command {
 type Command interface {
 	GetName() string
 	PrintUsage()
-	Run(args []string) error
+	Run(cfg config.Config, args []string) error
 }
 
 type command struct {
