@@ -50,15 +50,29 @@ func (cmd CookCommand) cook(r *recipe.Recipe, debug bool) bool {
 	log := log.New(file, "", log.Ltime)
 
 	gxx := gxx.NewGXXCompiler(r.Includes, r.LibraryPaths, r.Libraries)
-	com := compiler.NewCompiler(log, gxx, debug)
+	com := compiler.NewCompiler(log, gxx, cmd.createCompilerOptions(debug))
 
 	return cmd.compile(r, log, com)
+}
+
+func (CookCommand) createCompilerOptions(debug bool) compiler.Options {
+	if debug {
+		return compiler.Options{
+			Debug:  true,
+			Macros: []string{"NDEBUG"},
+		}
+	} else {
+		return compiler.Options{
+			Debug:  false,
+			Macros: []string{},
+		}
+	}
 }
 
 func (cmd CookCommand) compile(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
 	log.Println("[Compilation Start]")
 
-	if c.Debug {
+	if c.Opts.Debug {
 		style.BoldError.Println("[DEBUG MODE]")
 	}
 
@@ -82,7 +96,7 @@ func (cmd CookCommand) compileObjects(r *recipe.Recipe, log *log.Logger, c compi
 		cmd.printCompileFile(r, float32(i)/float32(len(indices)), src)
 
 		obj := r.ObjectFiles[index]
-		res := c.CompileObject(r.JoinPath(src), r.JoinObjectPath(obj, c.Debug))
+		res := c.CompileObject(r.JoinPath(src), r.JoinObjectPath(obj, c.Opts.Debug))
 
 		if !res {
 			return false
@@ -107,12 +121,12 @@ func (cmd CookCommand) compileExecutable(r *recipe.Recipe, log *log.Logger, c co
 
 	objects := make([]string, len(r.ObjectFiles))
 	for i, obj := range r.ObjectFiles {
-		objects[i] = r.JoinObjectPath(obj, c.Debug)
+		objects[i] = r.JoinObjectPath(obj, c.Opts.Debug)
 	}
 
 	cmd.printCompileFile(r, 1.0, r.MainSource)
 
-	exec := r.GetExecutable(c.Debug)
+	exec := r.GetExecutable(c.Opts.Debug)
 	res := c.CompileExecutable(r.JoinPath(r.MainSource), r.JoinPath(exec), objects...)
 
 	if res {
