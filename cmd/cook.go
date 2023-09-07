@@ -43,7 +43,7 @@ func (cmd CookCommand) Run(args []string) error {
 }
 
 func (cmd CookCommand) cook(r *recipe.Recipe, debug bool) bool {
-	os.MkdirAll(r.ObjectDir, 0755)
+	os.MkdirAll(r.GetObjectPath(debug), 0755)
 	file, _ := os.Create(CompileLogFile(r.Path))
 
 	defer file.Close()
@@ -57,6 +57,10 @@ func (cmd CookCommand) cook(r *recipe.Recipe, debug bool) bool {
 
 func (cmd CookCommand) compile(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
 	log.Println("[Compilation Start]")
+
+	if c.Debug {
+		style.BoldError.Println("[DEBUG MODE]")
+	}
 
 	if ok := cmd.compileObjects(r, log, c); !ok {
 		return cmd.fail(log, "Bad Ingredients!")
@@ -75,15 +79,15 @@ func (cmd CookCommand) compileObjects(r *recipe.Recipe, log *log.Logger, c compi
 
 	for i, index := range indices {
 		src := r.SourceFiles[index]
-		obj := r.ObjectFiles[index]
-
 		cmd.printCompileFile(r, float32(i)/float32(len(indices)), src)
-		res := c.CompileObject(src, obj)
+
+		obj := r.ObjectFiles[index]
+		res := c.CompileObject(r.JoinPath(src), r.JoinObjectPath(obj, c.Debug))
 
 		if !res {
 			return false
 		}
-		style.Create.Println(r.TrimObjectDir(obj))
+		style.Create.Println(obj)
 	}
 	return true
 }
@@ -101,18 +105,23 @@ func (cmd CookCommand) compileExecutable(r *recipe.Recipe, log *log.Logger, c co
 		style.InfoV2.Printf("%s+ [%d] %s\n", INDENT, count, style.SelectPlural("library", "libraries", count))
 	}
 
+	objects := make([]string, len(r.ObjectFiles))
+	for i, obj := range r.ObjectFiles {
+		objects[i] = r.JoinObjectPath(obj, c.Debug)
+	}
+
 	cmd.printCompileFile(r, 1.0, r.MainSource)
-	res := c.CompileExecutable(r.MainSource, r.Executable, r.ObjectFiles...)
+	res := c.CompileExecutable(r.JoinPath(r.MainSource), r.JoinPath(r.Executable), objects...)
 
 	if res {
-		style.BoldCreate.Println(r.TrimPath(r.Executable))
+		style.BoldCreate.Println(r.Executable)
 	}
 	return res
 }
 
 func (cmd CookCommand) printCompileFile(r *recipe.Recipe, percent float32, src string) {
 	style.BoldInfo.Printf("%s[%3d%%] ", INDENT, int(percent*100))
-	style.File.Print(r.TrimPath(src))
+	style.File.Print(src)
 	fmt.Print(" -> ")
 }
 

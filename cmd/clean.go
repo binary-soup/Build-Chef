@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/binary-soup/bchef/cmd/compiler"
 	"github.com/binary-soup/bchef/recipe"
@@ -35,7 +36,8 @@ func (cmd CleanCommand) clean(r *recipe.Recipe) {
 	style.Header.Println("Doing the Dishes...")
 
 	for _, obj := range r.ObjectFiles {
-		cmd.removeFile(r, r.ObjectDir, obj, style.Delete)
+		cmd.removeObject(r, obj, true)
+		cmd.removeObject(r, obj, false)
 	}
 	cmd.removeFile(r, r.Path, r.Executable, style.BoldDelete)
 
@@ -45,8 +47,12 @@ func (cmd CleanCommand) clean(r *recipe.Recipe) {
 	style.BoldSuccess.Println("Squeaky Clean!")
 }
 
-func (CleanCommand) removeFile(r *recipe.Recipe, dir string, file string, deleteStyle style.Style) {
-	if err := os.Remove(file); err == nil {
-		deleteStyle.Println(INDENT + "x " + r.TrimDir(dir, file))
+func (cmd CleanCommand) removeObject(r *recipe.Recipe, obj string, debug bool) {
+	cmd.removeFile(r, r.ObjectPath, filepath.Join(r.GetDebugDir(debug), obj), style.Delete)
+}
+
+func (CleanCommand) removeFile(r *recipe.Recipe, path string, file string, deleteStyle style.Style) {
+	if err := os.Remove(filepath.Join(path, file)); err == nil {
+		deleteStyle.Println(INDENT + "x " + file)
 	}
 }

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/binary-soup/bchef/parser"
-	"github.com/binary-soup/bchef/recipe"
 )
 
 func SourceCacheFile(path string) string {
@@ -21,8 +20,8 @@ type sourceInfo struct {
 }
 type sourceCache map[string]sourceInfo
 
-func (c sourceCache) Load(r *recipe.Recipe) {
-	file, err := os.Open(SourceCacheFile(r.Path))
+func (c sourceCache) Load(path string) {
+	file, err := os.Open(SourceCacheFile(path))
 	if err != nil {
 		return
 	}
@@ -38,10 +37,10 @@ func (c sourceCache) Load(r *recipe.Recipe) {
 			if len(token) == 0 {
 				continue
 			}
-			includes = append(includes, r.JoinPath(token))
+			includes = append(includes, token)
 		}
 
-		c[r.JoinPath(tokens[0])] = sourceInfo{
+		c[tokens[0]] = sourceInfo{
 			Mod:      c.parseMod(tokens[1]),
 			Includes: includes,
 		}
@@ -56,15 +55,15 @@ func (c sourceCache) parseMod(token string) int64 {
 	return num
 }
 
-func (c sourceCache) Save(r *recipe.Recipe) {
-	file, _ := os.Create(SourceCacheFile(r.Path))
+func (c sourceCache) Save(path string) {
+	file, _ := os.Create(SourceCacheFile(path))
 	defer file.Close()
 
 	for key, val := range c {
-		fmt.Fprintf(file, "%s,%d,", r.TrimPath(key), val.Mod)
+		fmt.Fprintf(file, "%s,%d,", key, val.Mod)
 
 		for _, include := range val.Includes {
-			fmt.Fprintf(file, "%s,", r.TrimPath(include))
+			fmt.Fprintf(file, "%s,", include)
 		}
 		fmt.Fprintln(file)
 	}

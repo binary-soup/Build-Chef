@@ -12,7 +12,7 @@ func NewCompiler(log *log.Logger, impl CompilerImpl, debug bool) Compiler {
 	return Compiler{
 		log:   log,
 		impl:  impl,
-		debug: debug,
+		Debug: debug,
 	}
 }
 
@@ -24,22 +24,22 @@ type CompilerImpl interface {
 type Compiler struct {
 	log   *log.Logger
 	impl  CompilerImpl
-	debug bool
+	Debug bool
 }
 
 func (c Compiler) ComputeChangedSources(r *recipe.Recipe) []int {
 	tracker := newTracker(r.Path)
 
-	tracker.LoadCache(r)
-	defer tracker.SaveCache(r)
+	tracker.LoadCache()
+	defer tracker.SaveCache()
 
-	indices := tracker.CalcChangedIndices(r.SourceFiles, r.ObjectFiles)
+	indices := tracker.CalcChangedIndices(r.SourceFiles, r.ObjectFiles, r.GetObjectPath(c.Debug))
 
 	return indices
 }
 
 func (c Compiler) CompileObject(src string, obj string) bool {
-	cmd := c.impl.CompileObject(c.debug, src, obj)
+	cmd := c.impl.CompileObject(c.Debug, src, obj)
 	res := c.runCommand(cmd)
 
 	c.logCommand(cmd.String(), src, 0, res)
@@ -47,7 +47,7 @@ func (c Compiler) CompileObject(src string, obj string) bool {
 }
 
 func (c Compiler) CompileExecutable(src string, exec string, objs ...string) bool {
-	cmd := c.impl.CompileExecutable(c.debug, src, exec, objs...)
+	cmd := c.impl.CompileExecutable(c.Debug, src, exec, objs...)
 	res := c.runCommand(cmd)
 
 	c.logCommand(cmd.String(), src, len(objs), res)

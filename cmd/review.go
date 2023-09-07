@@ -31,12 +31,12 @@ func (cmd ReviewCommand) Run(args []string) error {
 func (cmd ReviewCommand) info(r *recipe.Recipe) {
 	style.Header.Println("Executable:")
 
-	style.BoldCreate.Println(INDENT + r.TrimPath(r.Executable))
-	style.File.Println(INDENT + r.TrimPath(r.MainSource))
+	style.BoldCreate.Println(INDENT + r.Executable)
+	style.File.Println(INDENT + r.MainSource)
 
 	style.Header.Println("Source Files:")
 	for _, src := range r.SourceFiles {
-		style.File.Println(INDENT + r.TrimPath(src))
+		style.File.Println(INDENT + src)
 	}
 
 	style.Header.Println("Include Directories:")

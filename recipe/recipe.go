@@ -30,16 +30,16 @@ func Load(path string) (*Recipe, error) {
 		Libraries:    []string{},
 	}
 
-	r.ObjectDir = filepath.Join(r.Path, ".bchef/obj")
+	r.ObjectPath = filepath.Join(r.Path, ".bchef/obj")
 	r.Includes = append(r.Includes, r.Path)
 
 	return &r, r.parse(file)
 }
 
 type Recipe struct {
-	Name      string
-	Path      string
-	ObjectDir string
+	Name       string
+	Path       string
+	ObjectPath string
 
 	Executable string
 	MainSource string
@@ -53,24 +53,24 @@ type Recipe struct {
 	Libraries    []string
 }
 
-func (Recipe) TrimDir(dir string, file string) string {
-	return strings.TrimPrefix(file, dir+"/")
-}
-
 func (r Recipe) JoinPath(src string) string {
 	return filepath.Join(r.Path, src)
 }
 
-func (r Recipe) TrimPath(src string) string {
-	return r.TrimDir(r.Path, src)
+func (r Recipe) GetDebugDir(debug bool) string {
+	if debug {
+		return "debug"
+	} else {
+		return "release"
+	}
 }
 
-func (r Recipe) JoinObjectDir(obj string) string {
-	return filepath.Join(r.ObjectDir, obj)
+func (r Recipe) GetObjectPath(debug bool) string {
+	return filepath.Join(r.ObjectPath, r.GetDebugDir(debug))
 }
 
-func (r Recipe) TrimObjectDir(obj string) string {
-	return r.TrimDir(r.ObjectDir, obj)
+func (r Recipe) JoinObjectPath(obj string, debug bool) string {
+	return filepath.Join(r.GetObjectPath(debug), obj)
 }
 
 func (r *Recipe) parse(reader io.Reader) error {
@@ -120,12 +120,12 @@ func (r *Recipe) parseExecutable(p *parser.Parser, tokens []string) error {
 	if len(tokens) < 1 || len(tokens[0]) == 0 {
 		return p.Error("missing or empty executable name")
 	}
-	r.Executable = filepath.Join(r.Path, tokens[0])
+	r.Executable = tokens[0]
 
 	if len(tokens) < 2 || len(tokens[1]) == 0 {
 		return p.Error("missing or empty main source")
 	}
-	r.MainSource = filepath.Join(r.Path, tokens[1])
+	r.MainSource = tokens[1]
 
 	return nil
 }
@@ -148,8 +148,8 @@ func (r *Recipe) parseSources(p *parser.Parser, tokens []string) error {
 	return r.whileNotKeyword(p, func(line string) {
 		src := filepath.Join(srcDir, line)
 
-		r.SourceFiles = append(r.SourceFiles, r.JoinPath(src))
-		r.ObjectFiles = append(r.ObjectFiles, r.JoinObjectDir(r.srcToObject(src)))
+		r.SourceFiles = append(r.SourceFiles, src)
+		r.ObjectFiles = append(r.ObjectFiles, r.srcToObject(src))
 	})
 }
 

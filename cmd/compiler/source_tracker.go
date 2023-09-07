@@ -5,8 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-
-	"github.com/binary-soup/bchef/recipe"
 )
 
 var includeRegex = regexp.MustCompile(`^#include "([^"]+.(h|hxx))"$`)
@@ -27,23 +25,23 @@ type sourceTracker struct {
 	mods     map[string]int64
 }
 
-func (t *sourceTracker) LoadCache(r *recipe.Recipe) {
+func (t *sourceTracker) LoadCache() {
 	t.cache = sourceCache{}
-	t.cache.Load(r)
+	t.cache.Load(t.dir)
 }
 
-func (t *sourceTracker) SaveCache(r *recipe.Recipe) {
+func (t *sourceTracker) SaveCache() {
 	for file, includes := range t.includes {
 		t.cache.UpdateEntry(file, t.getMod(file), includes)
 	}
-	t.cache.Save(r)
+	t.cache.Save(t.dir)
 }
 
-func (t sourceTracker) CalcChangedIndices(sources []string, objects []string) []int {
+func (t sourceTracker) CalcChangedIndices(sources []string, objects []string, objPath string) []int {
 	indices := []int{}
 
 	for i, src := range sources {
-		if t.isFileNewer(src, t.getMod(objects[i])) {
+		if t.isFileNewer(src, t.getMod(filepath.Join(objPath, objects[i]))) {
 			indices = append(indices, i)
 		}
 	}
@@ -71,7 +69,7 @@ func (t sourceTracker) getMod(file string) int64 {
 		return mod
 	}
 
-	info, err := os.Stat(file)
+	info, err := os.Stat(filepath.Join(t.dir, file))
 	if err != nil {
 		mod = 0
 	} else {
@@ -90,7 +88,7 @@ func (t sourceTracker) getIncludes(file string) []string {
 
 	includes, ok = t.cache.GetIncludes(file, t.getMod(file))
 	if !ok {
-		includes = t.parseIncludes(file)
+		includes = t.parseIncludes(filepath.Join(t.dir, file))
 	}
 
 	t.includes[file] = includes
