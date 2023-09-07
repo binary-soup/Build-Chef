@@ -8,24 +8,26 @@ import (
 	"github.com/binary-soup/bchef/recipe"
 )
 
-func NewCompiler(log *log.Logger, impl CompilerImpl) Compiler {
+func NewCompiler(log *log.Logger, impl CompilerImpl, debug bool) Compiler {
 	return Compiler{
-		Log:  log,
-		Impl: impl,
+		log:   log,
+		impl:  impl,
+		debug: debug,
 	}
 }
 
 type CompilerImpl interface {
-	CompileObject(src string, obj string) *exec.Cmd
-	CompileExecutable(src string, exec string, objs ...string) *exec.Cmd
+	CompileObject(debug bool, src string, obj string) *exec.Cmd
+	CompileExecutable(debug bool, src string, exec string, objs ...string) *exec.Cmd
 }
 
 type Compiler struct {
-	Log  *log.Logger
-	Impl CompilerImpl
+	log   *log.Logger
+	impl  CompilerImpl
+	debug bool
 }
 
-func (Compiler) ComputeChangedSources(r *recipe.Recipe) []int {
+func (c Compiler) ComputeChangedSources(r *recipe.Recipe) []int {
 	tracker := newTracker(r.Path)
 
 	tracker.LoadCache(r)
@@ -37,7 +39,7 @@ func (Compiler) ComputeChangedSources(r *recipe.Recipe) []int {
 }
 
 func (c Compiler) CompileObject(src string, obj string) bool {
-	cmd := c.Impl.CompileObject(src, obj)
+	cmd := c.impl.CompileObject(c.debug, src, obj)
 	res := c.runCommand(cmd)
 
 	c.logCommand(cmd.String(), src, 0, res)
@@ -45,7 +47,7 @@ func (c Compiler) CompileObject(src string, obj string) bool {
 }
 
 func (c Compiler) CompileExecutable(src string, exec string, objs ...string) bool {
-	cmd := c.Impl.CompileExecutable(src, exec, objs...)
+	cmd := c.impl.CompileExecutable(c.debug, src, exec, objs...)
 	res := c.runCommand(cmd)
 
 	c.logCommand(cmd.String(), src, len(objs), res)
@@ -69,5 +71,5 @@ func (c Compiler) logCommand(cmdStr string, src string, numObjs int, res bool) {
 		log += "FAIL"
 	}
 
-	c.Log.Println(log, cmdStr)
+	c.log.Println(log, cmdStr)
 }

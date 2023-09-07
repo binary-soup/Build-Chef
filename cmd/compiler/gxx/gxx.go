@@ -37,16 +37,24 @@ type GXX struct {
 	libraries    []string
 }
 
-func (gxx GXX) CompileObject(src string, obj string) *exec.Cmd {
+func (gxx GXX) CompileObject(debug bool, src string, obj string) *exec.Cmd {
 	args := []string{WARNINGS, STANDARD}
+	if debug {
+		args = append(args, DEBUG)
+	}
+
 	args = append(args, gxx.includes...)
 	args = append(args, "-c", "-o", obj, src)
 
 	return exec.Command(BINARY, args...)
 }
 
-func (gxx GXX) CompileExecutable(src string, out string, objs ...string) *exec.Cmd {
+func (gxx GXX) CompileExecutable(debug bool, src string, out string, objs ...string) *exec.Cmd {
 	args := []string{WARNINGS, STANDARD}
+	if debug {
+		args = append(args, DEBUG)
+	}
+
 	args = append(args, gxx.includes...)
 	args = append(args, "-o", out, src)
 	args = append(args, objs...)

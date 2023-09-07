@@ -20,7 +20,7 @@ func CompileLogFile(path string) string {
 
 func NewCookCommand() CookCommand {
 	return CookCommand{
-		command: newCommand("cook", "compile the project"),
+		command: newCommand("cook", "build the project"),
 	}
 }
 
@@ -30,6 +30,7 @@ type CookCommand struct {
 
 func (cmd CookCommand) Run(args []string) error {
 	path := cmd.pathFlag()
+	debug := cmd.flagSet.Bool("d", false, "build in debug mode")
 	cmd.parseFlags(args)
 
 	r, err := cmd.loadRecipe(*path)
@@ -37,20 +38,21 @@ func (cmd CookCommand) Run(args []string) error {
 		return err
 	}
 
-	cmd.cook(r)
+	cmd.cook(r, *debug)
 	return nil
 }
 
-func (cmd CookCommand) cook(r *recipe.Recipe) bool {
+func (cmd CookCommand) cook(r *recipe.Recipe, debug bool) bool {
 	os.MkdirAll(r.ObjectDir, 0755)
 	file, _ := os.Create(CompileLogFile(r.Path))
 
 	defer file.Close()
 	log := log.New(file, "", log.Ltime)
 
-	return cmd.compile(
-		r, log, compiler.NewCompiler(log, gxx.NewGXXCompiler(r.Includes, r.LibraryPaths, r.Libraries)),
-	)
+	gxx := gxx.NewGXXCompiler(r.Includes, r.LibraryPaths, r.Libraries)
+	com := compiler.NewCompiler(log, gxx, debug)
+
+	return cmd.compile(r, log, com)
 }
 
 func (cmd CookCommand) compile(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
