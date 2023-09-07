@@ -57,7 +57,7 @@ func (r Recipe) JoinPath(src string) string {
 	return filepath.Join(r.Path, src)
 }
 
-func (r Recipe) GetDebugDir(debug bool) string {
+func (Recipe) GetMode(debug bool) string {
 	if debug {
 		return "debug"
 	} else {
@@ -65,8 +65,16 @@ func (r Recipe) GetDebugDir(debug bool) string {
 	}
 }
 
+func (r Recipe) GetExecutable(debug bool) string {
+	if debug {
+		return r.Executable + "." + r.GetMode(true)
+	} else {
+		return r.Executable
+	}
+}
+
 func (r Recipe) GetObjectPath(debug bool) string {
-	return filepath.Join(r.ObjectPath, r.GetDebugDir(debug))
+	return filepath.Join(r.ObjectPath, r.GetMode(debug))
 }
 
 func (r Recipe) JoinObjectPath(obj string, debug bool) string {

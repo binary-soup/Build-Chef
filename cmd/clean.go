@@ -39,7 +39,9 @@ func (cmd CleanCommand) clean(r *recipe.Recipe) {
 		cmd.removeObject(r, obj, true)
 		cmd.removeObject(r, obj, false)
 	}
-	cmd.removeFile(r, r.Path, r.Executable, style.BoldDelete)
+
+	cmd.removeExecutable(r, true)
+	cmd.removeExecutable(r, false)
 
 	os.Remove(CompileLogFile(r.Path))
 	os.Remove(compiler.SourceCacheFile(r.Path))
@@ -48,7 +50,11 @@ func (cmd CleanCommand) clean(r *recipe.Recipe) {
 }
 
 func (cmd CleanCommand) removeObject(r *recipe.Recipe, obj string, debug bool) {
-	cmd.removeFile(r, r.ObjectPath, filepath.Join(r.GetDebugDir(debug), obj), style.Delete)
+	cmd.removeFile(r, r.ObjectPath, filepath.Join(r.GetMode(debug), obj), style.Delete)
+}
+
+func (cmd CleanCommand) removeExecutable(r *recipe.Recipe, debug bool) {
+	cmd.removeFile(r, r.Path, r.GetExecutable(debug), style.BoldDelete)
 }
 
 func (CleanCommand) removeFile(r *recipe.Recipe, path string, file string, deleteStyle style.Style) {
