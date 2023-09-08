@@ -1,4 +1,4 @@
-package parser
+package reader
 
 func NewLoopedList[T any](size int) LoopedList[T] {
 	return LoopedList[T]{

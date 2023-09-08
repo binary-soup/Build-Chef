@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/binary-soup/bchef/parser"
+	"github.com/binary-soup/bchef/reader"
 )
 
 const SOURCE_CACHE_FILE = ".bchef/source_cache.txt"
@@ -25,9 +25,9 @@ func (c sourceCache) Load(path string) {
 	}
 
 	defer file.Close()
-	p := parser.New(file, 0)
+	r := reader.New(file, path, 0)
 
-	for line, hasNext := p.Next(); hasNext; line, hasNext = p.Next() {
+	for line, hasNext := r.Next(); hasNext; line, hasNext = r.Next() {
 		tokens := strings.Split(line, ",")
 
 		includes := []string{}

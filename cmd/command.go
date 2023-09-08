@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"path/filepath"
 
 	"github.com/binary-soup/bchef/config"
 	"github.com/binary-soup/bchef/recipe"
@@ -62,6 +61,6 @@ func (cmd command) loadRecipe(path string) (*recipe.Recipe, error) {
 		return nil, errors.Join(fmt.Errorf("error loading recipe at %s", style.FileV2.String(path)), err)
 	}
 
-	fmt.Println("Recipe loaded from", style.BoldFileV2.String(filepath.Join(r.Path, r.Name)))
+	fmt.Println("Recipe loaded from", style.BoldFileV2.String(r.FullPath()))
 	return r, nil
 }
