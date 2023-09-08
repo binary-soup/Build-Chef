@@ -52,11 +52,11 @@ func (gxx GXX) CompileObject(opts compiler.Options, src string, obj string) *exe
 	return exec.Command(BINARY, args...)
 }
 
-func (gxx GXX) CompileExecutable(opts compiler.Options, src string, out string, objs ...string) *exec.Cmd {
+func (gxx GXX) CompileExecutable(opts compiler.Options, out string, objs ...string) *exec.Cmd {
 	args := gxx.createArgs(opts)
 
 	args = append(args, gxx.includes...)
-	args = append(args, "-o", out, src)
+	args = append(args, "-o", out)
 	args = append(args, objs...)
 	args = append(args, gxx.staticLibs...)
 	args = append(args, gxx.libraryPaths...)

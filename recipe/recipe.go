@@ -36,7 +36,6 @@ type Recipe struct {
 	ObjectPath string
 
 	Executable string
-	MainSource string
 
 	SourceFiles []string
 	ObjectFiles []string

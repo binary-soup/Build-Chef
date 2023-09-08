@@ -23,7 +23,7 @@ type Options struct {
 
 type CompilerImpl interface {
 	CompileObject(opts Options, src string, obj string) *exec.Cmd
-	CompileExecutable(opts Options, src string, exec string, objs ...string) *exec.Cmd
+	CompileExecutable(opts Options, exec string, objs ...string) *exec.Cmd
 }
 
 type Compiler struct {
@@ -51,11 +51,11 @@ func (c Compiler) CompileObject(src string, obj string) bool {
 	return res
 }
 
-func (c Compiler) CompileExecutable(src string, exec string, objs ...string) bool {
-	cmd := c.impl.CompileExecutable(c.Opts, src, exec, objs...)
+func (c Compiler) CompileExecutable(exec string, objs ...string) bool {
+	cmd := c.impl.CompileExecutable(c.Opts, exec, objs...)
 	res := c.runCommand(cmd)
 
-	c.logCommand(cmd.String(), src, len(objs), res)
+	c.logCommand(cmd.String(), "", len(objs), res)
 	return res
 }
 

@@ -26,11 +26,6 @@ func (rec *Recipe) parseExecutableKeyword(r *reader.Reader, tokens []string) err
 	}
 	rec.Executable = tokens[0]
 
-	if len(tokens) < 2 || len(tokens[1]) == 0 {
-		return r.Error("missing or empty main source")
-	}
-	rec.MainSource = tokens[1]
-
 	return nil
 }
 

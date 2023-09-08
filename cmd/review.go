@@ -40,7 +40,6 @@ func (cmd ReviewCommand) Run(cfg config.Config, args []string) error {
 func (cmd ReviewCommand) review(r *recipe.Recipe, systemPaths []string) {
 	style.Header.Println("Executable:")
 	cmd.reviewExecutable(r, r.Executable)
-	cmd.reviewSourceFile(r, r.MainSource)
 
 	style.Header.Println("Source Files:")
 	for _, src := range r.SourceFiles {

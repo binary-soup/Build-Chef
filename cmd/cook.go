@@ -140,10 +140,10 @@ func (cmd CookCommand) compileExecutable(r *recipe.Recipe, log *log.Logger, c co
 		objects[i] = r.JoinObjectPath(obj, c.Opts.Debug)
 	}
 
-	cmd.printCompileFile(r, 1.0, r.MainSource)
+	cmd.printCompileFile(r, 1.0, "(ALL)")
 
 	exec := r.GetExecutable(c.Opts.Debug)
-	res := c.CompileExecutable(r.JoinPath(r.MainSource), r.JoinPath(exec), objects...)
+	res := c.CompileExecutable(r.JoinPath(exec), objects...)
 
 	if res {
 		style.BoldCreate.Println(exec)
