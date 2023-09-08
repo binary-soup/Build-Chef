@@ -28,7 +28,7 @@ type CookCommand struct {
 
 func (cmd CookCommand) Run(cfg config.Config, args []string) error {
 	path := cmd.pathFlag()
-	debug := cmd.flagSet.Bool("d", false, "build in debug mode")
+	release := cmd.flagSet.Bool("release", false, "build in release mode")
 	cmd.parseFlags(args)
 
 	r, err := cmd.loadRecipe(*path)
@@ -36,7 +36,7 @@ func (cmd CookCommand) Run(cfg config.Config, args []string) error {
 		return err
 	}
 
-	return cmd.cook(r, cfg.Compiler, *debug)
+	return cmd.cook(r, cfg.Compiler, !*release)
 }
 
 func (cmd CookCommand) cook(r *recipe.Recipe, compilerName string, debug bool) error {
