@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-const CONFIG_FILE = "config.json"
+const CONFIG_FILE = "bchef.config.json"
 
 func Load() (Config, error) {
 	cfg := Config{}

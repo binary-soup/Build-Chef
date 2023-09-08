@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -33,8 +32,9 @@ func main() {
 
 	cfg, err := config.Load()
 	if err != nil {
-		printError(errors.Join(errors.New("error loading config"), err))
-		return
+		style.Info.Println("[USING DEFAULT CONFIG]")
+	} else {
+		style.Info.Println("[CONFIG LOADED]")
 	}
 
 	if err = runCommand(os.Args[1], cfg, os.Args[2:]); err != nil {

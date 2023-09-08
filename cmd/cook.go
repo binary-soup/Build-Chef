@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -60,10 +59,8 @@ func (cmd CookCommand) cook(r *recipe.Recipe, compilerName string, debug bool) e
 
 func (CookCommand) chooseCompiler(r *recipe.Recipe, compilerName string) (compiler.CompilerImpl, error) {
 	switch compilerName {
-	case "g++":
+	case "", "g++":
 		return gxx.NewGXXCompiler(r.Includes, r.LibraryPaths, r.Libraries), nil
-	case "":
-		return nil, errors.New("empty compiler")
 	default:
 		return nil, fmt.Errorf("unsupported compiler \"%s\"", compilerName)
 	}
