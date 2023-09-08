@@ -63,8 +63,12 @@ func (r Recipe) srcToObject(path string) string {
 }
 
 func (rec *Recipe) parseIncludesKeyword(r *reader.Reader) error {
-	return rec.whileNotKeyword(r, func(line string) {
-		rec.Includes = append(rec.Includes, line)
+	return rec.whileNotKeyword(r, func(include string) {
+		if !filepath.IsAbs(include) {
+			include = rec.JoinPath(include)
+		}
+
+		rec.Includes = append(rec.Includes, include)
 	})
 }
 
