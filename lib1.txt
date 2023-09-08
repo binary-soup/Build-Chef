@@ -1,5 +1,5 @@
 |INCLUDES
     include/path/1
 
-|LIBRARIES lib/path/1
-    lib1
+|STATIC_LIBS lib/path/1
+    lib1.a

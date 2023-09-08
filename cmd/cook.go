@@ -60,7 +60,7 @@ func (cmd CookCommand) cook(r *recipe.Recipe, compilerName string, debug bool) e
 func (CookCommand) chooseCompiler(r *recipe.Recipe, compilerName string) (compiler.CompilerImpl, error) {
 	switch compilerName {
 	case "", "g++":
-		return gxx.NewGXXCompiler(r.Includes, r.LibraryPaths, r.Libraries), nil
+		return gxx.NewGXXCompiler(r.Includes, r.StaticLibs, r.LibraryPaths, r.SharedLibs), nil
 	default:
 		return nil, fmt.Errorf("unsupported compiler \"%s\"", compilerName)
 	}
@@ -125,9 +125,14 @@ func (cmd CookCommand) compileExecutable(r *recipe.Recipe, log *log.Logger, c co
 		style.InfoV2.Printf("%s+ [%d] %s\n", INDENT, count, style.SelectPlural("object", "objects", count))
 	}
 
-	count = len(r.Libraries)
+	count = len(r.SharedLibs)
 	if count > 0 {
-		style.InfoV2.Printf("%s+ [%d] %s\n", INDENT, count, style.SelectPlural("library", "libraries", count))
+		style.InfoV2.Printf("%s+ [%d] shared %s\n", INDENT, count, style.SelectPlural("library", "libraries", count))
+	}
+
+	count = len(r.StaticLibs)
+	if count > 0 {
+		style.InfoV2.Printf("%s+ [%d] static %s\n", INDENT, count, style.SelectPlural("library", "libraries", count))
 	}
 
 	objects := make([]string, len(r.ObjectFiles))

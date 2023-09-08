@@ -13,11 +13,12 @@ const (
 	DEBUG    = "-g"
 )
 
-func NewGXXCompiler(includes []string, libraryPaths []string, libraries []string) GXX {
+func NewGXXCompiler(includes []string, staticLibs []string, libraryPaths []string, sharedLibs []string) GXX {
 	gxx := GXX{
 		includes:     make([]string, len(includes)),
+		staticLibs:   staticLibs,
 		libraryPaths: make([]string, len(libraryPaths)),
-		libraries:    make([]string, len(libraries)),
+		sharedLibs:   make([]string, len(sharedLibs)),
 	}
 
 	for i, include := range includes {
@@ -28,8 +29,8 @@ func NewGXXCompiler(includes []string, libraryPaths []string, libraries []string
 		gxx.libraryPaths[i] = "-L" + path
 	}
 
-	for i, lib := range libraries {
-		gxx.libraries[i] = "-l" + lib
+	for i, lib := range sharedLibs {
+		gxx.sharedLibs[i] = "-l" + lib
 	}
 
 	return gxx
@@ -37,8 +38,9 @@ func NewGXXCompiler(includes []string, libraryPaths []string, libraries []string
 
 type GXX struct {
 	includes     []string
+	staticLibs   []string
 	libraryPaths []string
-	libraries    []string
+	sharedLibs   []string
 }
 
 func (gxx GXX) CompileObject(opts compiler.Options, src string, obj string) *exec.Cmd {
@@ -56,7 +58,9 @@ func (gxx GXX) CompileExecutable(opts compiler.Options, src string, out string, 
 	args = append(args, gxx.includes...)
 	args = append(args, "-o", out, src)
 	args = append(args, objs...)
-	args = append(args, gxx.libraries...)
+	args = append(args, gxx.staticLibs...)
+	args = append(args, gxx.libraryPaths...)
+	args = append(args, gxx.sharedLibs...)
 
 	return exec.Command(BINARY, args...)
 }

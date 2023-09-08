@@ -20,7 +20,8 @@ func Load(path string) (*Recipe, error) {
 		ObjectFiles:  []string{},
 		Includes:     []string{},
 		LibraryPaths: []string{},
-		Libraries:    []string{},
+		SharedLibs:   []string{},
+		StaticLibs:   []string{},
 	}
 
 	r.ObjectPath = filepath.Join(r.Path, ".bchef/obj")
@@ -43,7 +44,8 @@ type Recipe struct {
 	Includes []string
 
 	LibraryPaths []string
-	Libraries    []string
+	SharedLibs   []string
+	StaticLibs   []string
 }
 
 func (r Recipe) FullPath() string {

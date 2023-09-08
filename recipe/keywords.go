@@ -72,13 +72,28 @@ func (rec *Recipe) parseIncludesKeyword(r *reader.Reader) error {
 	})
 }
 
-func (rec *Recipe) parseLibrariesKeyword(r *reader.Reader, tokens []string) error {
+func (rec *Recipe) parseSharedLibsKeyword(r *reader.Reader, tokens []string) error {
 	if len(tokens) > 0 && len(tokens[0]) > 0 {
 		rec.LibraryPaths = append(rec.LibraryPaths, tokens[0])
 	}
 
 	return rec.whileNotKeyword(r, func(line string) {
-		rec.Libraries = append(rec.Libraries, line)
+		rec.SharedLibs = append(rec.SharedLibs, line)
+	})
+}
+
+func (rec *Recipe) parseStaticLibsKeyword(r *reader.Reader, tokens []string) error {
+	path := "."
+	if len(tokens) > 0 && len(tokens[0]) > 0 {
+		path = tokens[0]
+	}
+
+	if !filepath.IsAbs(path) {
+		path = rec.JoinPath(path)
+	}
+
+	return rec.whileNotKeyword(r, func(line string) {
+		rec.StaticLibs = append(rec.StaticLibs, filepath.Join(path, line))
 	})
 }
 

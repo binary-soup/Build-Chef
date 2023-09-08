@@ -52,14 +52,19 @@ func (cmd ReviewCommand) review(r *recipe.Recipe, systemPaths []string) {
 		cmd.reviewSystemPath(include)
 	}
 
-	style.Header.Println("Library Paths:")
+	style.Header.Println("Shared Library Paths:")
 	for _, path := range r.LibraryPaths {
 		cmd.reviewSystemPath(path)
 	}
 
-	style.Header.Println("Libraries:")
-	for _, lib := range r.Libraries {
-		cmd.reviewLibrary(lib, append(systemPaths, r.LibraryPaths...))
+	style.Header.Println("Shared Libraries:")
+	for _, lib := range r.SharedLibs {
+		cmd.reviewSharedLibrary(lib, append(systemPaths, r.LibraryPaths...))
+	}
+
+	style.Header.Println("Static Libraries:")
+	for _, lib := range r.StaticLibs {
+		cmd.reviewStaticLibrary(lib)
 	}
 }
 
@@ -112,29 +117,35 @@ func (ReviewCommand) pathExists(path string) bool {
 	return err == nil
 }
 
-func (cmd ReviewCommand) reviewLibrary(lib string, paths []string) {
+func (cmd ReviewCommand) reviewSharedLibrary(lib string, paths []string) {
 	cmd.reviewFilepath(
-		cmd.verifyLibrary(paths, lib),
+		cmd.verifySharedLibrary(paths, lib),
 		cmd.verified(), cmd.unverified(),
 		style.FileV2.String(lib),
 	)
 }
 
-func (cmd ReviewCommand) verifyLibrary(paths []string, lib string) func() bool {
+func (cmd ReviewCommand) verifySharedLibrary(paths []string, lib string) func() bool {
 	return func() bool {
-		return cmd.libraryExists(paths, lib)
+		return cmd.sharedLibraryExists(paths, lib)
 	}
 }
 
-func (cmd ReviewCommand) libraryExists(paths []string, lib string) bool {
+func (cmd ReviewCommand) sharedLibraryExists(paths []string, lib string) bool {
 	for _, path := range paths {
-		for _, ext := range []string{".a", ".so"} {
-			if cmd.pathExists(filepath.Join(path, "lib"+lib+ext)) {
-				return true
-			}
+		if cmd.pathExists(filepath.Join(path, "lib"+lib+".so")) {
+			return true
 		}
 	}
 	return false
+}
+
+func (cmd ReviewCommand) reviewStaticLibrary(lib string) {
+	cmd.reviewFilepath(
+		cmd.verifyPath(lib),
+		cmd.verified(), cmd.notFound("library"),
+		style.FileV2.String(lib),
+	)
 }
 
 func (ReviewCommand) verified() string {

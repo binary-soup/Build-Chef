@@ -1,6 +1,6 @@
 |INCLUDES
     include/path/2
 
-|LIBRARIES lib/path/2
+|SHARED_LIBS lib/path/2
     lib2.1
     lib2.2
