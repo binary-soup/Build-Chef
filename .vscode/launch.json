@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}",
-            "args": ["clean", "-path", "../test_project/recipe.txt", "-cache"]
+            "args": ["review", "-path", "../test_project/recipe.txt"]
         }
     ]
 }

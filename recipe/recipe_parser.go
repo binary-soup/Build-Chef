@@ -29,7 +29,7 @@ func (recipeParser) ParseKeyword(rec *Recipe, r *reader.Reader, keyword string, 
 	case "SOURCES":
 		return rec.parseSourcesKeyword(r, tokens)
 	case "INCLUDES":
-		return rec.parseIncludesKeyword(r)
+		return rec.parseIncludesKeyword(r, tokens)
 	case "SHARED_LIBS":
 		return rec.parseSharedLibsKeyword(r, tokens)
 	case "STATIC_LIBS":
