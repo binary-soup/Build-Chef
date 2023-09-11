@@ -22,7 +22,7 @@ type CleanCommand struct {
 
 func (cmd CleanCommand) Run(_ config.Config, args []string) error {
 	path := cmd.pathFlag()
-	cache := cmd.flagSet.Bool("cache", false, "also delete cache files")
+	cache := cmd.boolFlag("cache", false, "also delete cache files")
 	cmd.parseFlags(args)
 
 	r, err := cmd.loadRecipe(*path)

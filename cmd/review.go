@@ -23,7 +23,7 @@ type ReviewCommand struct {
 
 func (cmd ReviewCommand) Run(cfg config.Config, args []string) error {
 	path := cmd.pathFlag()
-	verify := cmd.flagSet.Bool("verify", false, "verify filepaths are correct")
+	verify := cmd.boolFlag("verify", false, "verify filepaths are correct")
 	cmd.parseFlags(args)
 
 	r, err := cmd.loadRecipe(*path)

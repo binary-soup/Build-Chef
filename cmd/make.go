@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -41,8 +42,9 @@ type MakeCommand struct {
 
 func (cmd MakeCommand) Run(_ config.Config, args []string) error {
 	path := cmd.pathFlag()
-	name := cmd.flagSet.String("name", "", "name of the new file")
-	overwrite := cmd.flagSet.Bool("overwrite", false, "overwrite files if already exists (no undo)")
+	name := cmd.stringFlag("name", "", "path of the new file (required)")
+	overwrite := cmd.boolFlag("overwrite", false, "overwrite files if already exists (no undo)")
+	header := cmd.boolFlag("header", false, "only generate header file")
 	cmd.parseFlags(args)
 
 	r, err := cmd.loadRecipe(*path)
@@ -51,10 +53,10 @@ func (cmd MakeCommand) Run(_ config.Config, args []string) error {
 	}
 
 	cmd.overwrite = *overwrite
-	return cmd.create(r, *name)
+	return cmd.create(r, *name, *header)
 }
 
-func (cmd MakeCommand) create(r *recipe.Recipe, name string) error {
+func (cmd MakeCommand) create(r *recipe.Recipe, name string, headerOnly bool) error {
 	if len(name) == 0 {
 		return errors.New("missing or empty name")
 	}
@@ -66,8 +68,10 @@ func (cmd MakeCommand) create(r *recipe.Recipe, name string) error {
 		return err
 	}
 
-	if err := cmd.createSource(r.JoinPath(name+".cxx"), header); err != nil {
-		return err
+	if !headerOnly {
+		if err := cmd.createSource(r.JoinPath(name+".cxx"), header); err != nil {
+			return err
+		}
 	}
 
 	style.BoldSuccess.Println("New Ingredients Ready!")
@@ -94,12 +98,15 @@ func (cmd MakeCommand) createFile(path string, fill func(*os.File)) error {
 	}
 
 	file, err := os.Create(path)
-	if err != nil {
+	if os.IsNotExist(err) {
+		return fmt.Errorf("directory \"%s\" does not exist", filepath.Dir(path))
+	} else if err != nil {
 		return errors.Join(fmt.Errorf("error creating \"%s\"", path), err)
 	}
-	defer file.Close()
 
+	defer file.Close()
 	fill(file)
+
 	style.Create.Println(INDENT + "+ " + path)
 	return nil
 }

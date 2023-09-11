@@ -51,8 +51,16 @@ func (cmd command) parseFlags(args []string) {
 	cmd.flagSet.Parse(args)
 }
 
+func (cmd command) boolFlag(name string, value bool, usage string) *bool {
+	return cmd.flagSet.Bool(name, value, usage)
+}
+
+func (cmd command) stringFlag(name string, value string, usage string) *string {
+	return cmd.flagSet.String(name, value, usage)
+}
+
 func (cmd command) pathFlag() *string {
-	return cmd.flagSet.String("path", "recipe.txt", "path to the recipe file")
+	return cmd.stringFlag("path", "recipe.txt", "path to the recipe file")
 }
 
 func (cmd command) loadRecipe(path string) (*recipe.Recipe, error) {

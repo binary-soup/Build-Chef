@@ -29,7 +29,7 @@ type CookCommand struct {
 
 func (cmd CookCommand) Run(cfg config.Config, args []string) error {
 	path := cmd.pathFlag()
-	release := cmd.flagSet.Bool("release", false, "build in release mode")
+	release := cmd.boolFlag("release", false, "build in release mode")
 	cmd.parseFlags(args)
 
 	r, err := cmd.loadRecipe(*path)
