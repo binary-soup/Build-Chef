@@ -13,13 +13,19 @@ import (
 	"github.com/binary-soup/bchef/style"
 )
 
-const HEADER_TMPL = `
+const HEADER_TEMPLATE = `
 #ifndef {{.}}
 #define {{.}}
 
 
 
 #endif
+`
+
+const SOURCE_TEMPLATE = `
+#include "{{.}}"
+
+
 `
 
 func NewMakeCommand() MakeCommand {
@@ -52,11 +58,15 @@ func (cmd MakeCommand) create(r *recipe.Recipe, name string) error {
 	if len(name) == 0 {
 		return errors.New("missing or empty name")
 	}
-	name += ".hxx"
 
 	style.Header.Println("Making...")
 
-	if err := cmd.createHeader(r.JoinPath(name), name); err != nil {
+	header := name + ".hxx"
+	if err := cmd.createHeader(r.JoinPath(header), header); err != nil {
+		return err
+	}
+
+	if err := cmd.createSource(r.JoinPath(name+".cxx"), header); err != nil {
 		return err
 	}
 
@@ -65,8 +75,22 @@ func (cmd MakeCommand) create(r *recipe.Recipe, name string) error {
 }
 
 func (cmd MakeCommand) createHeader(path string, name string) error {
-	if err := cmd.checkFileExists(path); err != nil {
-		return err
+	return cmd.createFile(path, func(file *os.File) {
+		headerGuards := common.ToUpper(common.ReplaceChar(name, "/.", '_'))
+		cmd.parseTemplate("header", HEADER_TEMPLATE).Execute(file, headerGuards)
+	})
+}
+
+func (cmd MakeCommand) createSource(path string, header string) error {
+	return cmd.createFile(path, func(file *os.File) {
+		cmd.parseTemplate("source", SOURCE_TEMPLATE).Execute(file, header)
+	})
+}
+
+func (cmd MakeCommand) createFile(path string, fill func(*os.File)) error {
+	if !cmd.canCreateFile(path) {
+		style.File.Printf("%s- %s (already exists)\n", INDENT, path)
+		return nil
 	}
 
 	file, err := os.Create(path)
@@ -75,28 +99,18 @@ func (cmd MakeCommand) createHeader(path string, name string) error {
 	}
 	defer file.Close()
 
-	cmd.fillHeader(file, name)
+	fill(file)
 	style.Create.Println(INDENT + "+ " + path)
-
 	return nil
 }
 
-func (cmd MakeCommand) fillHeader(file *os.File, name string) {
-	headerGuards := common.ToUpper(common.ReplaceChar(name, "/.", '_'))
-	cmd.parseTemplate("header", HEADER_TMPL).Execute(file, headerGuards)
-}
-
-func (cmd MakeCommand) checkFileExists(path string) error {
+func (cmd MakeCommand) canCreateFile(path string) bool {
 	if cmd.overwrite {
-		return nil
+		return true
 	}
 
 	_, err := os.Stat(path)
-	if err == nil {
-		return fmt.Errorf("file \"%s\" already exists", path)
-	}
-
-	return nil
+	return err != nil
 }
 
 func (MakeCommand) parseTemplate(name string, tmpl string) *template.Template {
