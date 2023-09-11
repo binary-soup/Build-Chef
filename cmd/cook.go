@@ -7,6 +7,7 @@ import (
 
 	"github.com/binary-soup/bchef/cmd/compiler"
 	"github.com/binary-soup/bchef/cmd/compiler/gxx"
+	"github.com/binary-soup/bchef/common"
 	"github.com/binary-soup/bchef/config"
 	"github.com/binary-soup/bchef/recipe"
 	"github.com/binary-soup/bchef/style"
@@ -100,7 +101,7 @@ func (cmd CookCommand) compileObjects(r *recipe.Recipe, log *log.Logger, c compi
 	style.Header.Println("Prepping...")
 
 	indices := c.ComputeChangedSources(r)
-	style.InfoV2.Printf("%s+ [%d] changed %s\n", INDENT, len(indices), style.SelectPlural("source", "sources", len(indices)))
+	style.InfoV2.Printf("%s+ [%d] changed %s\n", INDENT, len(indices), common.SelectPlural("source", "sources", len(indices)))
 
 	for i, index := range indices {
 		src := r.SourceFiles[index]
@@ -122,17 +123,17 @@ func (cmd CookCommand) compileExecutable(r *recipe.Recipe, log *log.Logger, c co
 
 	count := len(r.ObjectFiles)
 	if count > 0 {
-		style.InfoV2.Printf("%s+ [%d] %s\n", INDENT, count, style.SelectPlural("object", "objects", count))
+		style.InfoV2.Printf("%s+ [%d] %s\n", INDENT, count, common.SelectPlural("object", "objects", count))
 	}
 
 	count = len(r.SharedLibs)
 	if count > 0 {
-		style.InfoV2.Printf("%s+ [%d] shared %s\n", INDENT, count, style.SelectPlural("library", "libraries", count))
+		style.InfoV2.Printf("%s+ [%d] shared %s\n", INDENT, count, common.SelectPlural("library", "libraries", count))
 	}
 
 	count = len(r.StaticLibs)
 	if count > 0 {
-		style.InfoV2.Printf("%s+ [%d] static %s\n", INDENT, count, style.SelectPlural("library", "libraries", count))
+		style.InfoV2.Printf("%s+ [%d] static %s\n", INDENT, count, common.SelectPlural("library", "libraries", count))
 	}
 
 	objects := make([]string, len(r.ObjectFiles))

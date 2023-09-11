@@ -17,6 +17,7 @@ const (
 var cmds = []cmd.Command{
 	cmd.NewCleanCommand(),
 	cmd.NewCookCommand(),
+	cmd.NewMakeCommand(),
 	cmd.NewReviewCommand(),
 }
 

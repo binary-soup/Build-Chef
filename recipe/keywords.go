@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/binary-soup/bchef/common"
 	"github.com/binary-soup/bchef/reader"
 )
 
@@ -73,21 +74,7 @@ func (rec *Recipe) parseSourcesMulti(r *reader.Reader, path string) error {
 
 func (rec *Recipe) addSource(src string) {
 	rec.SourceFiles = append(rec.SourceFiles, src)
-	rec.ObjectFiles = append(rec.ObjectFiles, rec.srcToObject(src))
-}
-
-func (r Recipe) srcToObject(path string) string {
-	result := make([]rune, len(path))
-
-	for i, char := range path {
-		if char == '/' {
-			result[i] = '.'
-		} else {
-			result[i] = char
-		}
-	}
-
-	return string(result) + ".o"
+	rec.ObjectFiles = append(rec.ObjectFiles, common.ReplaceChar(src, "/", '.')+".o")
 }
 
 func (rec *Recipe) parseIncludesKeyword(r *reader.Reader, tokens []string) error {
