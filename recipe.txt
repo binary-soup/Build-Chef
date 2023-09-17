@@ -1,6 +1,8 @@
 # For testing parsing only. Will not compile.
 
-|EXECUTABLE build/program main.cxx
+|EXECUTABLE program 
+
+|SOURCES main.cxx
 
 |SOURCES src1/
     file1.cxx

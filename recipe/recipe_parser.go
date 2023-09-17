@@ -17,6 +17,11 @@ func (rec *Recipe) parseRecipe(file io.Reader) error {
 	if len(rec.Executable) == 0 {
 		return r.Error("missing executable keyword")
 	}
+
+	if len(rec.SourceFiles) == 0 {
+		return r.Error("at least one source file required")
+	}
+
 	return nil
 }
 
