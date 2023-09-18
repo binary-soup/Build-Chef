@@ -33,7 +33,7 @@ type Compiler struct {
 }
 
 func (c Compiler) ComputeChangedSources(r *recipe.Recipe) []int {
-	tracker := newTracker(r.Path)
+	tracker := newTracker(r)
 
 	tracker.LoadCache()
 	defer tracker.SaveCache()

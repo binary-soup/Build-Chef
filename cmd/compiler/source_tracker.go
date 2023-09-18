@@ -5,14 +5,16 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+
+	"github.com/binary-soup/bchef/recipe"
 )
 
 var includeRegex = regexp.MustCompile(`^#include "([^"]+.(h|hxx))"$`)
 
-func newTracker(dir string) sourceTracker {
+func newTracker(r *recipe.Recipe) sourceTracker {
 	return sourceTracker{
 		cache:    sourceCache{},
-		dir:      dir,
+		recipe:   r,
 		includes: map[string][]string{},
 		mods:     map[string]int64{},
 	}
@@ -20,21 +22,21 @@ func newTracker(dir string) sourceTracker {
 
 type sourceTracker struct {
 	cache    sourceCache
-	dir      string
+	recipe   *recipe.Recipe
 	includes map[string][]string
 	mods     map[string]int64
 }
 
 func (t *sourceTracker) LoadCache() {
 	t.cache = sourceCache{}
-	t.cache.Load(t.dir)
+	t.cache.Load(t.recipe.Path)
 }
 
 func (t *sourceTracker) SaveCache() {
 	for file, includes := range t.includes {
 		t.cache.UpdateEntry(file, t.getMod(file), includes)
 	}
-	t.cache.Save(t.dir)
+	t.cache.Save(t.recipe.Path)
 }
 
 func (t sourceTracker) CalcChangedIndices(sources []string, objects []string, objPath string) []int {
@@ -69,7 +71,7 @@ func (t sourceTracker) getMod(file string) int64 {
 		return mod
 	}
 
-	info, err := os.Stat(filepath.Join(t.dir, file))
+	info, err := os.Stat(t.recipe.JoinPath(file))
 	if err != nil {
 		mod = 0
 	} else {
@@ -88,7 +90,7 @@ func (t sourceTracker) getIncludes(file string) []string {
 
 	includes, ok = t.cache.GetIncludes(file, t.getMod(file))
 	if !ok {
-		includes = t.parseIncludes(filepath.Join(t.dir, file))
+		includes = t.parseIncludes(t.recipe.JoinPath(file))
 	}
 
 	t.includes[file] = includes
@@ -111,8 +113,28 @@ func (t sourceTracker) parseIncludes(src string) []string {
 		if match == nil {
 			continue
 		}
-		includes = append(includes, filepath.Join(t.dir, match[1]))
+
+		include, res := t.resolveInclude(match[1])
+		if res {
+			includes = append(includes, include)
+		}
+	}
+	return includes
+}
+
+func (t sourceTracker) resolveInclude(include string) (string, bool) {
+	for _, path := range t.recipe.Includes {
+		full := filepath.Join(t.recipe.Path, path, include)
+
+		if t.pathExists(full) {
+			return full, true
+		}
 	}
 
-	return includes
+	return "", false
+}
+
+func (sourceTracker) pathExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
