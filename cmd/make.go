@@ -31,7 +31,7 @@ const SOURCE_TEMPLATE = `
 
 func NewMakeCommand() MakeCommand {
 	return MakeCommand{
-		command: newCommand("make", "make a new header/source"),
+		command: newCommand("new", "make a new header/source"),
 	}
 }
 
