@@ -9,7 +9,7 @@ import (
 	"github.com/binary-soup/bchef/recipe"
 )
 
-var includeRegex = regexp.MustCompile(`\s*#include\s+"([^"]+.(h|hxx))"\s*`)
+var includeRegex = regexp.MustCompile(`^\s*#include\s+"([^"]+.(h|hxx))"\s*$`)
 
 func newTracker(r *recipe.Recipe) sourceTracker {
 	return sourceTracker{

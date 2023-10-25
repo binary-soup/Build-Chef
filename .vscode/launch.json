@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}",
-            "args": ["review", "-path", "../test_project/recipe.txt"]
+            "args": ["cook", "-path", "../test_project/recipe.txt"]
         }
     ]
 }
