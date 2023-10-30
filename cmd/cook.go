@@ -13,7 +13,7 @@ import (
 	"github.com/binary-soup/bchef/style"
 )
 
-// TODO: fix command injection
+// TODO: fix possible command injection?
 
 const COMPILE_LOG_FILE = ".bchef/compile_log.txt"
 
@@ -59,6 +59,7 @@ func (cmd CookCommand) cook(r *recipe.Recipe, compilerName string, debug bool) e
 }
 
 func (CookCommand) chooseCompiler(r *recipe.Recipe, compilerName string) (compiler.CompilerImpl, error) {
+	// TODO: support other compilers
 	switch compilerName {
 	case "", "g++":
 		return gxx.NewGXXCompiler(r.Includes, r.StaticLibs, r.LibraryPaths, r.SharedLibs), nil

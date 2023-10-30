@@ -1,0 +1,40 @@
+# For documentation purposes only. Will NOT compile.
+
+# Define the name of the executable. Can only be defined once.
+|EXECUTABLE program
+
+# List a single source file
+|SOURCES src.cxx
+
+# List many source files
+|SOURCES /path/to/src/
+    src1.cxx
+    src2.cxx
+
+# List a single include directory
+|INCLUDES
+    include/
+
+# List many include directories
+|INCLUDES /path/includes/
+    include1/
+    include2/
+
+# List a single static library
+|STATIC_LIBS /path/to/lib/lib.a
+
+# List many static libraries
+|STATIC_LIBS /path/to/libs/
+    lib1.a
+    lib2.a
+
+# List a single shared library
+|SHARED_LIBS lib
+
+# List many shared libraries
+|STATIC_LIBS /additional/library/paths/
+    lib1
+    lib2
+
+# Include a package
+|PACKAGE /path/to/pkg.txt

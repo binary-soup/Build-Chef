@@ -1,0 +1,9 @@
+# For documentation purposes only. Will NOT compile.
+# Packages are sub-recipes that only allow INCLUDES, STATIC_LIBS, and SHARED_LIBS keywords.
+# Use these packages to group dependencies together.
+
+|INCLUDES include/dir/
+
+|SHARED_LIBS
+    lib1
+    lib2
