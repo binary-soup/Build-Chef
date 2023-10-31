@@ -32,7 +32,7 @@
 |SHARED_LIBS lib
 
 # List many shared libraries
-|STATIC_LIBS /additional/library/paths/
+|SHARED_LIBS /additional/library/paths/
     lib1
     lib2
 
