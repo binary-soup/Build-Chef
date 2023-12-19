@@ -14,14 +14,14 @@ func Load(path string) (*Recipe, error) {
 	defer file.Close()
 
 	r := Recipe{
-		Path:         filepath.Dir(path),
-		Name:         filepath.Base(path),
-		SourceFiles:  []string{},
-		ObjectFiles:  []string{},
-		Includes:     []string{},
-		LibraryPaths: []string{},
-		SharedLibs:   []string{},
-		StaticLibs:   []string{},
+		Path:             filepath.Dir(path),
+		Name:             filepath.Base(path),
+		SourceFiles:      []string{},
+		ObjectFiles:      []string{},
+		Includes:         []string{},
+		LibraryPaths:     []string{},
+		LinkedSharedLibs: []string{},
+		LinkedStaticLibs: []string{},
 	}
 
 	r.ObjectPath = filepath.Join(r.Path, ".bchef/obj")
@@ -42,9 +42,9 @@ type Recipe struct {
 
 	Includes []string
 
-	LibraryPaths []string
-	SharedLibs   []string
-	StaticLibs   []string
+	LibraryPaths     []string
+	LinkedSharedLibs []string
+	LinkedStaticLibs []string
 }
 
 func (r Recipe) FullPath() string {

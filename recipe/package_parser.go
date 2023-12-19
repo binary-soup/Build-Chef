@@ -26,10 +26,10 @@ func (packageParser) ParseKeyword(rec *Recipe, r *reader.Reader, keyword string,
 		return r.Error("\"SOURCES\" unsupported in packages")
 	case "INCLUDES":
 		return rec.parseIncludesKeyword(r, tokens)
-	case "SHARED_LIBS":
-		return rec.parseSharedLibsKeyword(r, tokens)
-	case "STATIC_LIBS":
-		return rec.parseStaticLibsKeyword(r, tokens)
+	case "LINK_SHARED_LIBS":
+		return rec.parseLinkSharedLibsKeyword(r, tokens)
+	case "LINK_STATIC_LIBS":
+		return rec.parseLinkStaticLibsKeyword(r, tokens)
 	case "PACKAGE":
 		return r.Error("sub-packages unsupported")
 	default:

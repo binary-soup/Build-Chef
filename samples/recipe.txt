@@ -20,21 +20,21 @@
     include1/
     include2/
 
-# List a single static library
-|STATIC_LIBS /path/to/lib/lib.a
+# Link a single static library
+|LINK_STATIC_LIBS /path/to/lib/lib.a
 
-# List many static libraries
-|STATIC_LIBS /path/to/libs/
+# Link many static libraries
+|LINK_STATIC_LIBS /path/to/libs/
     lib1.a
     lib2.a
 
-# List a single shared library
-|SHARED_LIBS lib
+# Link a single shared library
+|LINK_SHARED_LIBS lib
 
-# List many shared libraries
-|SHARED_LIBS /additional/library/paths/
+# Link many shared libraries
+|LINK_SHARED_LIBS /additional/library/paths/
     lib1
     lib2
 
 # Include a package
-|PACKAGE /path/to/pkg.txt
+#|PACKAGE /path/to/pkg.txt

@@ -57,12 +57,12 @@ func (cmd ReviewCommand) review(r *recipe.Recipe, systemPaths []string) {
 	}
 
 	style.Header.Println("Shared Libraries:")
-	for _, lib := range r.SharedLibs {
+	for _, lib := range r.LinkedSharedLibs {
 		cmd.reviewSharedLibrary(lib, append(systemPaths, r.LibraryPaths...))
 	}
 
 	style.Header.Println("Static Libraries:")
-	for _, lib := range r.StaticLibs {
+	for _, lib := range r.LinkedStaticLibs {
 		cmd.reviewStaticLibrary(lib)
 	}
 }

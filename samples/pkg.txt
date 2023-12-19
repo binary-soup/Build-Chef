@@ -4,6 +4,6 @@
 
 |INCLUDES include/dir/
 
-|SHARED_LIBS
+|LINK_SHARED_LIBS
     lib1
     lib2

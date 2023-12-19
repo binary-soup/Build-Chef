@@ -107,69 +107,69 @@ func (rec *Recipe) addInclude(include string) {
 	rec.Includes = append(rec.Includes, include)
 }
 
-func (rec *Recipe) parseSharedLibsKeyword(r *reader.Reader, tokens []string) error {
+func (rec *Recipe) parseLinkSharedLibsKeyword(r *reader.Reader, tokens []string) error {
 	token := rec.firstOrEmpty(tokens)
 
 	if !rec.peekExtraLine(r) {
-		return rec.parseSharedLibsSingle(r, token)
+		return rec.parseLinkSharedLibsSingle(r, token)
 	} else {
-		return rec.parseSharedLibsMulti(r, token)
+		return rec.parseLinkSharedLibsMulti(r, token)
 	}
 }
 
-func (rec *Recipe) parseSharedLibsSingle(r *reader.Reader, lib string) error {
+func (rec *Recipe) parseLinkSharedLibsSingle(r *reader.Reader, lib string) error {
 	if len(lib) == 0 {
 		return r.Error("empty or missing library")
 	}
 
-	rec.addSharedLibrary(lib)
+	rec.addLinkedSharedLibrary(lib)
 	return nil
 }
 
-func (rec *Recipe) parseSharedLibsMulti(r *reader.Reader, path string) error {
+func (rec *Recipe) parseLinkSharedLibsMulti(r *reader.Reader, path string) error {
 	if len(path) > 0 {
 		rec.LibraryPaths = append(rec.LibraryPaths, path)
 	}
 
 	return rec.whileNotKeyword(r, func(line string) {
-		rec.addSharedLibrary(line)
+		rec.addLinkedSharedLibrary(line)
 	})
 }
 
-func (rec *Recipe) addSharedLibrary(lib string) {
-	rec.SharedLibs = append(rec.SharedLibs, lib)
+func (rec *Recipe) addLinkedSharedLibrary(lib string) {
+	rec.LinkedSharedLibs = append(rec.LinkedSharedLibs, lib)
 }
 
-func (rec *Recipe) parseStaticLibsKeyword(r *reader.Reader, tokens []string) error {
+func (rec *Recipe) parseLinkStaticLibsKeyword(r *reader.Reader, tokens []string) error {
 	token := rec.firstOrEmpty(tokens)
 
 	if !rec.peekExtraLine(r) {
-		return rec.parseStaticLibsSingle(r, token)
+		return rec.parseLinkStaticLibsSingle(r, token)
 	} else {
-		return rec.parseStaticLibsMulti(r, token)
+		return rec.parseLinkStaticLibsMulti(r, token)
 	}
 }
 
-func (rec *Recipe) parseStaticLibsSingle(r *reader.Reader, lib string) error {
+func (rec *Recipe) parseLinkStaticLibsSingle(r *reader.Reader, lib string) error {
 	if len(lib) == 0 {
 		return r.Error("empty or missing library")
 	}
 
-	rec.addStaticLibrary(lib)
+	rec.addLinkedStaticLibrary(lib)
 	return nil
 }
 
-func (rec *Recipe) parseStaticLibsMulti(r *reader.Reader, path string) error {
+func (rec *Recipe) parseLinkStaticLibsMulti(r *reader.Reader, path string) error {
 	return rec.whileNotKeyword(r, func(line string) {
-		rec.addStaticLibrary(filepath.Join(path, line))
+		rec.addLinkedStaticLibrary(filepath.Join(path, line))
 	})
 }
 
-func (rec *Recipe) addStaticLibrary(lib string) {
+func (rec *Recipe) addLinkedStaticLibrary(lib string) {
 	if !filepath.IsAbs(lib) {
 		lib = rec.JoinPath(lib)
 	}
-	rec.StaticLibs = append(rec.StaticLibs, lib)
+	rec.LinkedStaticLibs = append(rec.LinkedStaticLibs, lib)
 }
 
 func (rec *Recipe) parsePackageKeyword(r *reader.Reader, tokens []string) error {
