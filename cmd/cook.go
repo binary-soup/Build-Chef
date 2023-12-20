@@ -157,6 +157,10 @@ func (CookCommand) compileTargetByType(targetType int, c compiler.Compiler, targ
 	switch targetType {
 	case recipe.TARGET_EXECUTABLE:
 		return c.CompileExecutable(target, objs...)
+	case recipe.TARGET_STATIC_LIBRARY:
+		return c.CompileStaticLibrary(target, objs...)
+	case recipe.TARGET_SHARED_LIBRARY:
+		return c.CompileSharedLibrary(target, objs...)
 	default:
 		return false
 	}

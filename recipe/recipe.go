@@ -73,7 +73,7 @@ func (Recipe) GetMode(debug bool) string {
 func (r Recipe) GetTarget(debug bool) string {
 	target := r.Target
 	if debug {
-		return r.Target + "." + r.GetMode(true)
+		target = r.Target + "." + r.GetMode(true)
 	}
 
 	switch r.TargetType {

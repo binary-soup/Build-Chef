@@ -7,10 +7,12 @@ import (
 )
 
 const (
-	BINARY   = "g++"
+	COMPILER = "g++"
 	WARNINGS = "-Wall"
 	STANDARD = "-std=c++17"
 	DEBUG    = "-g"
+
+	ARCHIVER = "ar"
 )
 
 func NewGXXCompiler(includes []string, staticLibs []string, libraryPaths []string, sharedLibs []string) GXX {
@@ -49,7 +51,7 @@ func (gxx GXX) CompileObject(opts compiler.Options, src string, obj string) *exe
 	args = append(args, gxx.includes...)
 	args = append(args, "-c", "-o", obj, src)
 
-	return exec.Command(BINARY, args...)
+	return exec.Command(COMPILER, args...)
 }
 
 func (gxx GXX) CompileExecutable(opts compiler.Options, out string, objs ...string) *exec.Cmd {
@@ -62,7 +64,19 @@ func (gxx GXX) CompileExecutable(opts compiler.Options, out string, objs ...stri
 	args = append(args, gxx.libraryPaths...)
 	args = append(args, gxx.sharedLibs...)
 
-	return exec.Command(BINARY, args...)
+	return exec.Command(COMPILER, args...)
+}
+
+func (gxx GXX) CompileStaticLibrary(opts compiler.Options, lib string, objs ...string) *exec.Cmd {
+	args := []string{"rcs", lib}
+	args = append(args, objs...)
+
+	return exec.Command(ARCHIVER, args...)
+}
+
+func (gxx GXX) CompileSharedLibrary(opts compiler.Options, lib string, objs ...string) *exec.Cmd {
+	// TODO: implement
+	return nil
 }
 
 func (GXX) createArgs(opts compiler.Options) []string {
