@@ -47,7 +47,6 @@ func (cmd CleanCommand) clean(r *recipe.Recipe, cache bool) {
 		cmd.removeObject(r, obj, false)
 	}
 
-	// TODO: only remove file of the current mode
 	cmd.removeTarget(r, true)
 	cmd.removeTarget(r, false)
 

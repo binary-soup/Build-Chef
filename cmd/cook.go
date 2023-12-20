@@ -145,7 +145,7 @@ func (cmd CookCommand) compileTarget(r *recipe.Recipe, log *log.Logger, c compil
 	cmd.printCompileFile(r, 1.0, "(ALL)")
 
 	target := r.GetTarget(c.Opts.Debug)
-	res := cmd.compileTargetByType(r.TargetType, c, r.JoinPath(target), objects)
+	res := cmd.createTarget(r.TargetType, c, r.JoinPath(target), objects)
 
 	if res {
 		style.BoldCreate.Println(target)
@@ -153,14 +153,14 @@ func (cmd CookCommand) compileTarget(r *recipe.Recipe, log *log.Logger, c compil
 	return res
 }
 
-func (CookCommand) compileTargetByType(targetType int, c compiler.Compiler, target string, objs []string) bool {
+func (CookCommand) createTarget(targetType int, c compiler.Compiler, target string, objs []string) bool {
 	switch targetType {
 	case recipe.TARGET_EXECUTABLE:
-		return c.CompileExecutable(target, objs...)
+		return c.CreateExecutable(target, objs...)
 	case recipe.TARGET_STATIC_LIBRARY:
-		return c.CompileStaticLibrary(target, objs...)
+		return c.CreateStaticLibrary(target, objs...)
 	case recipe.TARGET_SHARED_LIBRARY:
-		return c.CompileSharedLibrary(target, objs...)
+		return c.CreateSharedLibrary(target, objs...)
 	default:
 		return false
 	}

@@ -23,9 +23,9 @@ type Options struct {
 
 type CompilerImpl interface {
 	CompileObject(opts Options, src string, obj string) *exec.Cmd
-	CompileExecutable(opts Options, exec string, objs ...string) *exec.Cmd
-	CompileStaticLibrary(opts Options, lib string, objs ...string) *exec.Cmd
-	CompileSharedLibrary(opts Options, lib string, objs ...string) *exec.Cmd
+	CreateExecutable(opts Options, exec string, objs ...string) *exec.Cmd
+	CreateStaticLibrary(opts Options, lib string, objs ...string) *exec.Cmd
+	CreateSharedLibrary(opts Options, lib string, objs ...string) *exec.Cmd
 }
 
 type Compiler struct {
@@ -53,24 +53,24 @@ func (c Compiler) CompileObject(src string, obj string) bool {
 	return res
 }
 
-func (c Compiler) CompileExecutable(exec string, objs ...string) bool {
-	cmd := c.impl.CompileExecutable(c.Opts, exec, objs...)
+func (c Compiler) CreateExecutable(exec string, objs ...string) bool {
+	cmd := c.impl.CreateExecutable(c.Opts, exec, objs...)
 	res := c.runCommand(cmd)
 
 	c.logCommand(cmd.String(), "", len(objs), res)
 	return res
 }
 
-func (c Compiler) CompileStaticLibrary(exec string, objs ...string) bool {
-	cmd := c.impl.CompileStaticLibrary(c.Opts, exec, objs...)
+func (c Compiler) CreateStaticLibrary(exec string, objs ...string) bool {
+	cmd := c.impl.CreateStaticLibrary(c.Opts, exec, objs...)
 	res := c.runCommand(cmd)
 
 	c.logCommand(cmd.String(), "", len(objs), res)
 	return res
 }
 
-func (c Compiler) CompileSharedLibrary(exec string, objs ...string) bool {
-	cmd := c.impl.CompileSharedLibrary(c.Opts, exec, objs...)
+func (c Compiler) CreateSharedLibrary(exec string, objs ...string) bool {
+	cmd := c.impl.CreateSharedLibrary(c.Opts, exec, objs...)
 	res := c.runCommand(cmd)
 
 	c.logCommand(cmd.String(), "", len(objs), res)

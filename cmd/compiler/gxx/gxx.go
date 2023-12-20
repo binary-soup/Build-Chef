@@ -54,10 +54,9 @@ func (gxx GXX) CompileObject(opts compiler.Options, src string, obj string) *exe
 	return exec.Command(COMPILER, args...)
 }
 
-func (gxx GXX) CompileExecutable(opts compiler.Options, out string, objs ...string) *exec.Cmd {
-	args := gxx.createArgs(opts)
+func (gxx GXX) CreateExecutable(opts compiler.Options, out string, objs ...string) *exec.Cmd {
+	args := []string{}
 
-	args = append(args, gxx.includes...)
 	args = append(args, "-o", out)
 	args = append(args, objs...)
 	args = append(args, gxx.staticLibs...)
@@ -67,14 +66,14 @@ func (gxx GXX) CompileExecutable(opts compiler.Options, out string, objs ...stri
 	return exec.Command(COMPILER, args...)
 }
 
-func (gxx GXX) CompileStaticLibrary(opts compiler.Options, lib string, objs ...string) *exec.Cmd {
+func (gxx GXX) CreateStaticLibrary(opts compiler.Options, lib string, objs ...string) *exec.Cmd {
 	args := []string{"rcs", lib}
 	args = append(args, objs...)
 
 	return exec.Command(ARCHIVER, args...)
 }
 
-func (gxx GXX) CompileSharedLibrary(opts compiler.Options, lib string, objs ...string) *exec.Cmd {
+func (gxx GXX) CreateSharedLibrary(opts compiler.Options, lib string, objs ...string) *exec.Cmd {
 	// TODO: implement
 	return nil
 }
