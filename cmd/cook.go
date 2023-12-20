@@ -92,7 +92,7 @@ func (cmd CookCommand) compile(r *recipe.Recipe, log *log.Logger, c compiler.Com
 	if ok := cmd.compileObjects(r, log, c); !ok {
 		return cmd.fail(log, "Bad Ingredients!")
 	}
-	if ok := cmd.compileExecutable(r, log, c); !ok {
+	if ok := cmd.compileTarget(r, log, c); !ok {
 		return cmd.fail(log, "Burnt!")
 	}
 	return cmd.pass(log, "Bon Appétit!")
@@ -119,7 +119,7 @@ func (cmd CookCommand) compileObjects(r *recipe.Recipe, log *log.Logger, c compi
 	return true
 }
 
-func (cmd CookCommand) compileExecutable(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
+func (cmd CookCommand) compileTarget(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
 	style.Header.Println("Cooking...")
 
 	count := len(r.ObjectFiles)
@@ -144,13 +144,22 @@ func (cmd CookCommand) compileExecutable(r *recipe.Recipe, log *log.Logger, c co
 
 	cmd.printCompileFile(r, 1.0, "(ALL)")
 
-	exec := r.GetExecutable(c.Opts.Debug)
-	res := c.CompileExecutable(r.JoinPath(exec), objects...)
+	target := r.GetTarget(c.Opts.Debug)
+	res := cmd.compileTargetByType(r.TargetType, c, r.JoinPath(target), objects)
 
 	if res {
-		style.BoldCreate.Println(exec)
+		style.BoldCreate.Println(target)
 	}
 	return res
+}
+
+func (CookCommand) compileTargetByType(targetType int, c compiler.Compiler, target string, objs []string) bool {
+	switch targetType {
+	case recipe.TARGET_EXECUTABLE:
+		return c.CompileExecutable(target, objs...)
+	default:
+		return false
+	}
 }
 
 func (cmd CookCommand) printCompileFile(r *recipe.Recipe, percent float32, src string) {

@@ -47,8 +47,9 @@ func (cmd CleanCommand) clean(r *recipe.Recipe, cache bool) {
 		cmd.removeObject(r, obj, false)
 	}
 
-	cmd.removeExecutable(r, true)
-	cmd.removeExecutable(r, false)
+	// TODO: only remove file of the current mode
+	cmd.removeTarget(r, true)
+	cmd.removeTarget(r, false)
 
 	style.BoldSuccess.Println("Squeaky Clean!")
 }
@@ -57,8 +58,8 @@ func (cmd CleanCommand) removeObject(r *recipe.Recipe, obj string, debug bool) {
 	cmd.removeFile(r.ObjectPath, filepath.Join(r.GetMode(debug), obj), style.Delete)
 }
 
-func (cmd CleanCommand) removeExecutable(r *recipe.Recipe, debug bool) {
-	cmd.removeFile(r.Path, r.GetExecutable(debug), style.BoldDelete)
+func (cmd CleanCommand) removeTarget(r *recipe.Recipe, debug bool) {
+	cmd.removeFile(r.Path, r.GetTarget(debug), style.BoldDelete)
 }
 
 func (cmd CleanCommand) removeCacheFile(r *recipe.Recipe, file string) {

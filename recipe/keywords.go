@@ -26,22 +26,41 @@ func (*Recipe) peekExtraLine(r *reader.Reader) bool {
 	return hasNext && line[0] != '|'
 }
 
-func (*Recipe) firstOrEmpty(tokens []string) string {
-	if len(tokens) > 0 {
-		return tokens[0]
+func (r *Recipe) firstOrEmpty(tokens []string) string {
+	return r.indexOrEmpty(tokens, 0)
+}
+
+func (*Recipe) indexOrEmpty(tokens []string, index int) string {
+	if len(tokens) > index {
+		return tokens[index]
 	} else {
 		return ""
 	}
 }
 
-func (rec *Recipe) parseExecutableKeyword(r *reader.Reader, tokens []string) error {
-	if len(rec.Executable) > 0 {
-		return r.Error("duplicate executable keyword")
+func (rec *Recipe) parseTargetKeyword(r *reader.Reader, tokens []string) error {
+	if len(rec.Target) > 0 {
+		return r.Error("duplicate target keyword")
 	}
 
-	rec.Executable = rec.firstOrEmpty(tokens)
-	if len(rec.Executable) == 0 {
-		return r.Error("missing or empty executable name")
+	typeStr := rec.indexOrEmpty(tokens, 0)
+
+	switch typeStr {
+	case "EXECUTABLE":
+		rec.TargetType = TARGET_EXECUTABLE
+	case "STATIC_LIBRARY":
+		rec.TargetType = TARGET_STATIC_LIBRARY
+	case "SHARED_LIBRARY":
+		rec.TargetType = TARGET_SHARED_LIBRARY
+	case "":
+		return r.Error("missing or empty target type")
+	default:
+		return r.Errorf("invalid target type \"%s\"", typeStr)
+	}
+
+	rec.Target = rec.indexOrEmpty(tokens, 1)
+	if len(rec.Target) == 0 {
+		return r.Error("missing or empty target name")
 	}
 
 	return nil

@@ -14,8 +14,8 @@ func (rec *Recipe) parseRecipe(file io.Reader) error {
 		return err
 	}
 
-	if len(rec.Executable) == 0 {
-		return r.Error("missing executable keyword")
+	if len(rec.Target) == 0 {
+		return r.Error("missing target keyword")
 	}
 
 	if len(rec.SourceFiles) == 0 {
@@ -29,8 +29,8 @@ type recipeParser struct{}
 
 func (recipeParser) ParseKeyword(rec *Recipe, r *reader.Reader, keyword string, tokens []string) error {
 	switch keyword {
-	case "EXECUTABLE":
-		return rec.parseExecutableKeyword(r, tokens)
+	case "TARGET":
+		return rec.parseTargetKeyword(r, tokens)
 	case "SOURCES":
 		return rec.parseSourcesKeyword(r, tokens)
 	case "INCLUDES":

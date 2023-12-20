@@ -38,8 +38,8 @@ func (cmd ReviewCommand) Run(cfg config.Config, args []string) error {
 }
 
 func (cmd ReviewCommand) review(r *recipe.Recipe, systemPaths []string) {
-	style.Header.Println("Executable:")
-	cmd.reviewExecutable(r, r.Executable)
+	style.Header.Println("Target:")
+	cmd.reviewTarget(r)
 
 	style.Header.Println("Source Files:")
 	for _, src := range r.SourceFiles {
@@ -81,11 +81,11 @@ func (cmd ReviewCommand) reviewFilepath(verify func() bool, pass string, fail st
 	fmt.Println(entry)
 }
 
-func (cmd ReviewCommand) reviewExecutable(r *recipe.Recipe, exec string) {
+func (cmd ReviewCommand) reviewTarget(r *recipe.Recipe) {
 	cmd.reviewFilepath(
-		cmd.verifyPath(r.JoinPath(filepath.Dir(exec))),
+		cmd.verifyPath(r.JoinPath(filepath.Dir(r.Target))),
 		cmd.verified(), cmd.notFound("path"),
-		style.BoldCreate.String(exec),
+		style.BoldCreate.Format("%s (%s)", r.Target, r.GetTargetType()),
 	)
 }
 

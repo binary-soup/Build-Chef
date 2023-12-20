@@ -30,12 +30,19 @@ func Load(path string) (*Recipe, error) {
 	return &r, r.parseRecipe(file)
 }
 
+const (
+	TARGET_EXECUTABLE     = iota
+	TARGET_STATIC_LIBRARY = iota
+	TARGET_SHARED_LIBRARY = iota
+)
+
 type Recipe struct {
 	Name       string
 	Path       string
 	ObjectPath string
 
-	Executable string
+	Target     string
+	TargetType int
 
 	SourceFiles []string
 	ObjectFiles []string
@@ -63,11 +70,30 @@ func (Recipe) GetMode(debug bool) string {
 	}
 }
 
-func (r Recipe) GetExecutable(debug bool) string {
+func (r Recipe) GetTarget(debug bool) string {
+	target := r.Target
 	if debug {
-		return r.Executable + "." + r.GetMode(true)
-	} else {
-		return r.Executable
+		return r.Target + "." + r.GetMode(true)
+	}
+
+	switch r.TargetType {
+	case TARGET_STATIC_LIBRARY:
+		return "lib" + target + ".a"
+	case TARGET_SHARED_LIBRARY:
+		return "lib" + target + ".so"
+	default: // TARGET_EXECUTABLE
+		return target
+	}
+}
+
+func (r Recipe) GetTargetType() string {
+	switch r.TargetType {
+	case TARGET_STATIC_LIBRARY:
+		return "STATIC_LIBRARY"
+	case TARGET_SHARED_LIBRARY:
+		return "SHARED_LIBRARY"
+	default: // TARGET_EXECUTABLE
+		return "EXECUTABLE"
 	}
 }
 
