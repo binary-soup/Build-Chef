@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/binary-soup/bchef/cmd/compiler"
 	"github.com/binary-soup/bchef/cmd/compiler/gxx"
@@ -25,11 +26,13 @@ func NewCookCommand() CookCommand {
 
 type CookCommand struct {
 	command
+	outputPath string
 }
 
 func (cmd CookCommand) Run(cfg config.Config, args []string) error {
 	path := cmd.pathFlag()
 	release := cmd.boolFlag("release", false, "build in release mode")
+	outputPath := cmd.stringFlag("o", ".", "path to output directory")
 	cmd.parseFlags(args)
 
 	r, err := cmd.loadRecipe(*path)
@@ -37,6 +40,7 @@ func (cmd CookCommand) Run(cfg config.Config, args []string) error {
 		return err
 	}
 
+	cmd.outputPath = *outputPath
 	return cmd.cook(r, cfg.Compiler, !*release)
 }
 
@@ -146,7 +150,7 @@ func (cmd CookCommand) compileTarget(r *recipe.Recipe, log *log.Logger, c compil
 	cmd.printCompileFile(r, 1.0, "(ALL)")
 
 	target := r.GetTarget(c.Opts.Debug)
-	res := cmd.createTarget(r.TargetType, c, r.JoinPath(target), objects)
+	res := cmd.createTarget(r.TargetType, c, filepath.Join(cmd.outputPath, target), objects)
 
 	if res {
 		style.BoldCreate.Println(target)
