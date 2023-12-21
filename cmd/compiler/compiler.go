@@ -18,6 +18,7 @@ func NewCompiler(log *log.Logger, impl CompilerImpl, opts Options) Compiler {
 
 type Options struct {
 	Debug  bool
+	PIC    bool
 	Macros []string
 }
 

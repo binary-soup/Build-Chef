@@ -10,9 +10,6 @@ const (
 	COMPILER = "g++"
 	WARNINGS = "-Wall"
 	STANDARD = "-std=c++17"
-	DEBUG    = "-g"
-
-	ARCHIVER = "ar"
 )
 
 func NewGXXCompiler(includes []string, staticLibs []string, libraryPaths []string, sharedLibs []string) GXX {
@@ -55,7 +52,7 @@ func (gxx GXX) CompileObject(opts compiler.Options, src string, obj string) *exe
 }
 
 func (gxx GXX) CreateExecutable(opts compiler.Options, out string, objs ...string) *exec.Cmd {
-	args := []string{}
+	args := []string{WARNINGS, STANDARD}
 
 	args = append(args, "-o", out)
 	args = append(args, objs...)
@@ -70,19 +67,30 @@ func (gxx GXX) CreateStaticLibrary(opts compiler.Options, lib string, objs ...st
 	args := []string{"rcs", lib}
 	args = append(args, objs...)
 
-	return exec.Command(ARCHIVER, args...)
+	return exec.Command("ar", args...)
 }
 
 func (gxx GXX) CreateSharedLibrary(opts compiler.Options, lib string, objs ...string) *exec.Cmd {
-	// TODO: implement
-	return nil
+	args := []string{WARNINGS, STANDARD, "-shared"}
+
+	args = append(args, "-o", lib)
+	args = append(args, objs...)
+	args = append(args, gxx.staticLibs...)
+	args = append(args, gxx.libraryPaths...)
+	args = append(args, gxx.sharedLibs...)
+
+	return exec.Command(COMPILER, args...)
 }
 
 func (GXX) createArgs(opts compiler.Options) []string {
 	args := []string{WARNINGS, STANDARD}
 
 	if opts.Debug {
-		args = append(args, DEBUG)
+		args = append(args, "-g")
+	}
+
+	if opts.PIC {
+		args = append(args, "-fPIC")
 	}
 
 	for _, marco := range opts.Macros {

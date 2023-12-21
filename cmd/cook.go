@@ -52,7 +52,7 @@ func (cmd CookCommand) cook(r *recipe.Recipe, compilerName string, debug bool) e
 		return err
 	}
 
-	com := compiler.NewCompiler(log, impl, cmd.createCompilerOptions(debug))
+	com := compiler.NewCompiler(log, impl, cmd.createCompilerOptions(r, debug))
 	cmd.compile(r, log, com)
 
 	return nil
@@ -68,18 +68,19 @@ func (CookCommand) chooseCompiler(r *recipe.Recipe, compilerName string) (compil
 	}
 }
 
-func (CookCommand) createCompilerOptions(debug bool) compiler.Options {
-	if debug {
-		return compiler.Options{
-			Debug:  true,
-			Macros: []string{"NDEBUG"},
-		}
-	} else {
-		return compiler.Options{
-			Debug:  false,
-			Macros: []string{},
-		}
+func (CookCommand) createCompilerOptions(r *recipe.Recipe, debug bool) compiler.Options {
+	opts := compiler.Options{
+		Debug:  false,
+		PIC:    r.TargetType == recipe.TARGET_SHARED_LIBRARY,
+		Macros: []string{},
 	}
+
+	if debug {
+		opts.Debug = true
+		opts.Macros = append(opts.Macros, "NDEBUG")
+	}
+
+	return opts
 }
 
 func (cmd CookCommand) compile(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
