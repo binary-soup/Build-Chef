@@ -52,7 +52,7 @@ func (cmd CookCommand) cook(r *recipe.Recipe, compilerName string, debug bool) e
 		return err
 	}
 
-	com := compiler.NewCompiler(log, impl, cmd.createCompilerOptions(debug))
+	com := compiler.NewCompiler(log, impl, cmd.createCompilerOptions(r, debug))
 	cmd.compile(r, log, com)
 
 	return nil
@@ -62,24 +62,25 @@ func (CookCommand) chooseCompiler(r *recipe.Recipe, compilerName string) (compil
 	// TODO: support other compilers
 	switch compilerName {
 	case "", "g++":
-		return gxx.NewGXXCompiler(r.Includes, r.StaticLibs, r.LibraryPaths, r.SharedLibs), nil
+		return gxx.NewGXXCompiler(r.Includes, r.LinkedStaticLibs, r.LibraryPaths, r.LinkedSharedLibs), nil
 	default:
 		return nil, fmt.Errorf("unsupported compiler \"%s\"", compilerName)
 	}
 }
 
-func (CookCommand) createCompilerOptions(debug bool) compiler.Options {
-	if debug {
-		return compiler.Options{
-			Debug:  true,
-			Macros: []string{"NDEBUG"},
-		}
-	} else {
-		return compiler.Options{
-			Debug:  false,
-			Macros: []string{},
-		}
+func (CookCommand) createCompilerOptions(r *recipe.Recipe, debug bool) compiler.Options {
+	opts := compiler.Options{
+		Debug:  false,
+		PIC:    r.TargetType == recipe.TARGET_SHARED_LIBRARY,
+		Macros: []string{},
 	}
+
+	if debug {
+		opts.Debug = true
+		opts.Macros = append(opts.Macros, "NDEBUG")
+	}
+
+	return opts
 }
 
 func (cmd CookCommand) compile(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
@@ -92,7 +93,7 @@ func (cmd CookCommand) compile(r *recipe.Recipe, log *log.Logger, c compiler.Com
 	if ok := cmd.compileObjects(r, log, c); !ok {
 		return cmd.fail(log, "Bad Ingredients!")
 	}
-	if ok := cmd.compileExecutable(r, log, c); !ok {
+	if ok := cmd.compileTarget(r, log, c); !ok {
 		return cmd.fail(log, "Burnt!")
 	}
 	return cmd.pass(log, "Bon Appétit!")
@@ -119,7 +120,7 @@ func (cmd CookCommand) compileObjects(r *recipe.Recipe, log *log.Logger, c compi
 	return true
 }
 
-func (cmd CookCommand) compileExecutable(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
+func (cmd CookCommand) compileTarget(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
 	style.Header.Println("Cooking...")
 
 	count := len(r.ObjectFiles)
@@ -127,12 +128,12 @@ func (cmd CookCommand) compileExecutable(r *recipe.Recipe, log *log.Logger, c co
 		style.InfoV2.Printf("%s+ [%d] %s\n", INDENT, count, common.SelectPlural("object", "objects", count))
 	}
 
-	count = len(r.SharedLibs)
+	count = len(r.LinkedSharedLibs)
 	if count > 0 {
 		style.InfoV2.Printf("%s+ [%d] shared %s\n", INDENT, count, common.SelectPlural("library", "libraries", count))
 	}
 
-	count = len(r.StaticLibs)
+	count = len(r.LinkedStaticLibs)
 	if count > 0 {
 		style.InfoV2.Printf("%s+ [%d] static %s\n", INDENT, count, common.SelectPlural("library", "libraries", count))
 	}
@@ -144,13 +145,26 @@ func (cmd CookCommand) compileExecutable(r *recipe.Recipe, log *log.Logger, c co
 
 	cmd.printCompileFile(r, 1.0, "(ALL)")
 
-	exec := r.GetExecutable(c.Opts.Debug)
-	res := c.CompileExecutable(r.JoinPath(exec), objects...)
+	target := r.GetTarget(c.Opts.Debug)
+	res := cmd.createTarget(r.TargetType, c, r.JoinPath(target), objects)
 
 	if res {
-		style.BoldCreate.Println(exec)
+		style.BoldCreate.Println(target)
 	}
 	return res
+}
+
+func (CookCommand) createTarget(targetType int, c compiler.Compiler, target string, objs []string) bool {
+	switch targetType {
+	case recipe.TARGET_EXECUTABLE:
+		return c.CreateExecutable(target, objs...)
+	case recipe.TARGET_STATIC_LIBRARY:
+		return c.CreateStaticLibrary(target, objs...)
+	case recipe.TARGET_SHARED_LIBRARY:
+		return c.CreateSharedLibrary(target, objs...)
+	default:
+		return false
+	}
 }
 
 func (cmd CookCommand) printCompileFile(r *recipe.Recipe, percent float32, src string) {

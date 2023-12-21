@@ -20,16 +20,16 @@ type packageParser struct{}
 
 func (packageParser) ParseKeyword(rec *Recipe, r *reader.Reader, keyword string, tokens []string) error {
 	switch keyword {
-	case "EXECUTABLE":
-		return r.Error("\"EXECUTABLE\" unsupported in packages")
+	case "TARGET":
+		return r.Error("\"TARGET\" unsupported in packages")
 	case "SOURCES":
 		return r.Error("\"SOURCES\" unsupported in packages")
 	case "INCLUDES":
 		return rec.parseIncludesKeyword(r, tokens)
-	case "SHARED_LIBS":
-		return rec.parseSharedLibsKeyword(r, tokens)
-	case "STATIC_LIBS":
-		return rec.parseStaticLibsKeyword(r, tokens)
+	case "LINK_SHARED_LIBS":
+		return rec.parseLinkSharedLibsKeyword(r, tokens)
+	case "LINK_STATIC_LIBS":
+		return rec.parseLinkStaticLibsKeyword(r, tokens)
 	case "PACKAGE":
 		return r.Error("sub-packages unsupported")
 	default:
