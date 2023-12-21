@@ -75,7 +75,6 @@ func (gxx GXX) CreateSharedLibrary(opts compiler.Options, lib string, objs ...st
 
 	args = append(args, "-o", lib)
 	args = append(args, objs...)
-	args = append(args, gxx.staticLibs...)
 	args = append(args, gxx.libraryPaths...)
 	args = append(args, gxx.sharedLibs...)
 
