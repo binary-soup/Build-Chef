@@ -25,40 +25,46 @@ func (cmd CleanCommand) Run(_ config.Config, args []string) error {
 	cache := cmd.boolFlag("cache", false, "also delete cache files")
 	cmd.parseFlags(args)
 
-	r, err := cmd.loadRecipe(*path)
+	t, err := cmd.loadRecipeTree(*path)
 	if err != nil {
 		return err
 	}
 
-	cmd.clean(r, *cache)
+	style.Header.Println("Doing the Dishes...")
+	defer style.BoldSuccess.Println("Squeaky Clean!")
+
+	t.Traverse(cleanVisitor{
+		cache: *cache,
+	})
 	return nil
 }
 
-func (cmd CleanCommand) clean(r *recipe.Recipe, cache bool) {
-	style.Header.Println("Doing the Dishes...")
+type cleanVisitor struct {
+	cache bool
+}
 
-	if cache {
-		cmd.removeCacheFile(r, COMPILE_LOG_FILE)
-		cmd.removeCacheFile(r, compiler.SOURCE_CACHE_FILE)
+func (v cleanVisitor) Visit(r *recipe.Recipe, index int) bool {
+	if v.cache {
+		v.removeCacheFile(r, COMPILE_LOG_FILE)
+		v.removeCacheFile(r, compiler.SOURCE_CACHE_FILE)
 	}
 
 	for _, obj := range r.ObjectFiles {
-		cmd.removeObject(r, obj, true)
-		cmd.removeObject(r, obj, false)
+		v.removeObject(r, obj, true)
+		v.removeObject(r, obj, false)
 	}
-
-	style.BoldSuccess.Println("Squeaky Clean!")
+	return true
 }
 
-func (cmd CleanCommand) removeObject(r *recipe.Recipe, obj string, debug bool) {
-	cmd.removeFile(r.ObjectPath, filepath.Join(r.GetMode(debug), obj), style.Delete)
+func (v cleanVisitor) removeObject(r *recipe.Recipe, obj string, debug bool) {
+	v.removeFile(r.ObjectPath, filepath.Join(r.GetMode(debug), obj), style.Delete)
 }
 
-func (cmd CleanCommand) removeCacheFile(r *recipe.Recipe, file string) {
-	cmd.removeFile(r.Path, file, style.Delete)
+func (v cleanVisitor) removeCacheFile(r *recipe.Recipe, file string) {
+	v.removeFile(r.Path, file, style.Delete)
 }
 
-func (CleanCommand) removeFile(path string, file string, deleteStyle style.Style) {
+func (cleanVisitor) removeFile(path string, file string, deleteStyle style.Style) {
 	if err := os.Remove(filepath.Join(path, file)); err == nil {
 		deleteStyle.Println(INDENT + "x " + file)
 	}

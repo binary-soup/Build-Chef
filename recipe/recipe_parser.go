@@ -41,6 +41,8 @@ func (recipeParser) ParseKeyword(rec *Recipe, r *reader.Reader, keyword string, 
 		return rec.parseLinkStaticLibsKeyword(r, tokens)
 	case "PACKAGE":
 		return rec.parsePackageKeyword(r, tokens)
+	case "LAYER":
+		return rec.parseLayerKeyword(r, tokens)
 	default:
 		return r.Errorf("unknown keyword \"%s\"", keyword)
 	}

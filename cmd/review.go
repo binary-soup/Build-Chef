@@ -18,7 +18,6 @@ func NewReviewCommand() ReviewCommand {
 
 type ReviewCommand struct {
 	command
-	verify bool
 }
 
 func (cmd ReviewCommand) Run(cfg config.Config, args []string) error {
@@ -26,51 +25,73 @@ func (cmd ReviewCommand) Run(cfg config.Config, args []string) error {
 	verify := cmd.boolFlag("verify", false, "verify filepaths are correct")
 	cmd.parseFlags(args)
 
-	r, err := cmd.loadRecipe(*path)
+	t, err := cmd.loadRecipeTree(*path)
 	if err != nil {
 		return err
 	}
 
-	cmd.verify = *verify
-	cmd.review(r, cfg.SystemPaths)
-
+	t.Traverse(reviewVisitor{
+		verify:      *verify,
+		systemPaths: cfg.SystemPaths,
+	})
 	return nil
 }
 
-func (cmd ReviewCommand) review(r *recipe.Recipe, systemPaths []string) {
-	style.Header.Println("Target:")
-	cmd.reviewTarget(r)
-
-	style.Header.Println("Source Files:")
-	for _, src := range r.SourceFiles {
-		cmd.reviewSourceFile(r, src)
-	}
-
-	style.Header.Println("Include Directories:")
-	for _, include := range r.Includes {
-		cmd.reviewSystemPath(include)
-	}
-
-	style.Header.Println("Shared Library Paths:")
-	for _, path := range r.LibraryPaths {
-		cmd.reviewSystemPath(path)
-	}
-
-	style.Header.Println("Shared Libraries:")
-	for _, lib := range r.LinkedSharedLibs {
-		cmd.reviewSharedLibrary(lib, append(systemPaths, r.LibraryPaths...))
-	}
-
-	style.Header.Println("Static Libraries:")
-	for _, lib := range r.LinkedStaticLibs {
-		cmd.reviewStaticLibrary(lib)
-	}
+type reviewVisitor struct {
+	verify      bool
+	systemPaths []string
 }
 
-func (cmd ReviewCommand) reviewFilepath(verify func() bool, pass string, fail string, entry string) {
-	fmt.Print(INDENT)
+func (v reviewVisitor) Visit(r *recipe.Recipe, index int) bool {
+	style.BoldFileV2.Printf("\n[%d] %s:\n", index+1, r.FullPath())
 
-	if cmd.verify {
+	fmt.Print(INDENT)
+	style.Header.Println("Target:")
+	v.reviewTarget(r)
+
+	fmt.Print(INDENT)
+	style.Header.Println("Layers:")
+	for _, layer := range r.Layers {
+		v.reviewLayer(r, layer)
+	}
+
+	fmt.Print(INDENT)
+	style.Header.Println("Source Files:")
+	for _, src := range r.SourceFiles {
+		v.reviewSourceFile(r, src)
+	}
+
+	fmt.Print(INDENT)
+	style.Header.Println("Include Directories:")
+	for _, include := range r.Includes {
+		v.reviewSystemPath(include)
+	}
+
+	fmt.Print(INDENT)
+	style.Header.Println("Shared Library Paths:")
+	for _, path := range r.LibraryPaths {
+		v.reviewSystemPath(path)
+	}
+
+	fmt.Print(INDENT)
+	style.Header.Println("Shared Libraries:")
+	for _, lib := range r.LinkedSharedLibs {
+		v.reviewSharedLibrary(lib, append(v.systemPaths, r.LibraryPaths...))
+	}
+
+	fmt.Print(INDENT)
+	style.Header.Println("Static Libraries:")
+	for _, lib := range r.LinkedStaticLibs {
+		v.reviewStaticLibrary(lib)
+	}
+
+	return true
+}
+
+func (v reviewVisitor) reviewFilepath(verify func() bool, pass string, fail string, entry string) {
+	fmt.Print(INDENT, INDENT)
+
+	if v.verify {
 		if verify() {
 			fmt.Print(pass)
 		} else {
@@ -81,80 +102,88 @@ func (cmd ReviewCommand) reviewFilepath(verify func() bool, pass string, fail st
 	fmt.Println(entry)
 }
 
-func (cmd ReviewCommand) reviewTarget(r *recipe.Recipe) {
-	cmd.reviewFilepath(
-		cmd.verifyPath(r.JoinPath(filepath.Dir(r.Target))),
-		cmd.verified(), cmd.notFound("path"),
+func (v reviewVisitor) reviewTarget(r *recipe.Recipe) {
+	v.reviewFilepath(
+		v.verifyPath(r.JoinPath(filepath.Dir(r.Target))),
+		v.verified(), v.notFound("path"),
 		style.BoldCreate.Format("%s (%s)", r.Target, r.GetTargetType()),
 	)
 }
 
-func (cmd ReviewCommand) reviewSourceFile(r *recipe.Recipe, src string) {
-	cmd.reviewFilepath(
-		cmd.verifyPath(r.JoinPath(src)),
-		cmd.verified(), cmd.notFound("file"),
+func (v reviewVisitor) reviewLayer(r *recipe.Recipe, layer string) {
+	v.reviewFilepath(
+		v.verifyPath(layer),
+		v.verified(), v.notFound("file"),
+		style.FileV2.String(layer),
+	)
+}
+
+func (v reviewVisitor) reviewSourceFile(r *recipe.Recipe, src string) {
+	v.reviewFilepath(
+		v.verifyPath(r.JoinPath(src)),
+		v.verified(), v.notFound("file"),
 		style.File.String(src),
 	)
 }
 
-func (cmd ReviewCommand) reviewSystemPath(path string) {
-	cmd.reviewFilepath(
-		cmd.verifyPath(path),
-		cmd.verified(), cmd.notFound("path"),
+func (v reviewVisitor) reviewSystemPath(path string) {
+	v.reviewFilepath(
+		v.verifyPath(path),
+		v.verified(), v.notFound("path"),
 		style.InfoV2.String(path),
 	)
 }
 
-func (cmd ReviewCommand) verifyPath(path string) func() bool {
+func (v reviewVisitor) verifyPath(path string) func() bool {
 	return func() bool {
-		return cmd.pathExists(path)
+		return v.pathExists(path)
 	}
 }
 
-func (ReviewCommand) pathExists(path string) bool {
+func (reviewVisitor) pathExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
 }
 
-func (cmd ReviewCommand) reviewSharedLibrary(lib string, paths []string) {
-	cmd.reviewFilepath(
-		cmd.verifySharedLibrary(paths, lib),
-		cmd.verified(), cmd.unverified(),
+func (v reviewVisitor) reviewSharedLibrary(lib string, paths []string) {
+	v.reviewFilepath(
+		v.verifySharedLibrary(paths, lib),
+		v.verified(), v.unverified(),
 		style.FileV2.String(lib),
 	)
 }
 
-func (cmd ReviewCommand) verifySharedLibrary(paths []string, lib string) func() bool {
+func (v reviewVisitor) verifySharedLibrary(paths []string, lib string) func() bool {
 	return func() bool {
-		return cmd.sharedLibraryExists(paths, lib)
+		return v.sharedLibraryExists(paths, lib)
 	}
 }
 
-func (cmd ReviewCommand) sharedLibraryExists(paths []string, lib string) bool {
+func (v reviewVisitor) sharedLibraryExists(paths []string, lib string) bool {
 	for _, path := range paths {
-		if cmd.pathExists(filepath.Join(path, "lib"+lib+".so")) {
+		if v.pathExists(filepath.Join(path, "lib"+lib+".so")) {
 			return true
 		}
 	}
 	return false
 }
 
-func (cmd ReviewCommand) reviewStaticLibrary(lib string) {
-	cmd.reviewFilepath(
-		cmd.verifyPath(lib),
-		cmd.verified(), cmd.notFound("library"),
+func (v reviewVisitor) reviewStaticLibrary(lib string) {
+	v.reviewFilepath(
+		v.verifyPath(lib),
+		v.verified(), v.notFound("library"),
 		style.FileV2.String(lib),
 	)
 }
 
-func (ReviewCommand) verified() string {
+func (reviewVisitor) verified() string {
 	return style.Success.String("[verified] ")
 }
 
-func (ReviewCommand) unverified() string {
+func (reviewVisitor) unverified() string {
 	return style.Info.String("[unverified] ")
 }
 
-func (ReviewCommand) notFound(name string) string {
+func (reviewVisitor) notFound(name string) string {
 	return style.Error.Format("[%s not found] ", name)
 }

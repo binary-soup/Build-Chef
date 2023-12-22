@@ -4,6 +4,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/binary-soup/bchef/config"
 	"github.com/binary-soup/bchef/recipe"
@@ -63,12 +65,17 @@ func (cmd command) pathFlag() *string {
 	return cmd.stringFlag("path", "recipe.txt", "path to the recipe file")
 }
 
-func (cmd command) loadRecipe(path string) (*recipe.Recipe, error) {
-	r, err := recipe.Load(path)
+func (cmd command) loadRecipeTree(path string) (*recipe.RecipeTree, error) {
+	stat, err := os.Stat(path)
+	if err != nil || stat.IsDir() {
+		path = filepath.Join(path, "recipe.txt")
+	}
+
+	t, err := recipe.LoadTree(path)
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("error loading recipe at %s", style.FileV2.String(path)), err)
 	}
 
-	fmt.Println("Recipe loaded from", style.BoldFileV2.String(r.FullPath()))
-	return r, nil
+	fmt.Println("Recipe tree loaded from", style.BoldFileV2.String(t.Root.FullPath()))
+	return t, nil
 }

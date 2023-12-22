@@ -6,14 +6,20 @@ import (
 	"path/filepath"
 )
 
-func Load(path string) (*Recipe, error) {
+const (
+	TARGET_EXECUTABLE     = iota
+	TARGET_STATIC_LIBRARY = iota
+	TARGET_SHARED_LIBRARY = iota
+)
+
+func loadRecipe(path string) (*Recipe, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, errors.Join(errors.New("error opening file"), err)
 	}
 	defer file.Close()
 
-	r := Recipe{
+	r := &Recipe{
 		Path:             filepath.Dir(path),
 		Name:             filepath.Base(path),
 		SourceFiles:      []string{},
@@ -22,19 +28,12 @@ func Load(path string) (*Recipe, error) {
 		LibraryPaths:     []string{},
 		LinkedSharedLibs: []string{},
 		LinkedStaticLibs: []string{},
+		Layers:           []string{},
 	}
 
 	r.ObjectPath = filepath.Join(r.Path, ".bchef/obj")
-	r.Includes = append(r.Includes, r.Path)
-
-	return &r, r.parseRecipe(file)
+	return r, r.parseRecipe(file)
 }
-
-const (
-	TARGET_EXECUTABLE     = iota
-	TARGET_STATIC_LIBRARY = iota
-	TARGET_SHARED_LIBRARY = iota
-)
 
 type Recipe struct {
 	Name       string
@@ -52,6 +51,8 @@ type Recipe struct {
 	LibraryPaths     []string
 	LinkedSharedLibs []string
 	LinkedStaticLibs []string
+
+	Layers []string
 }
 
 func (r Recipe) FullPath() string {
