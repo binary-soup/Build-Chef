@@ -43,7 +43,7 @@ type reviewVisitor struct {
 }
 
 func (v reviewVisitor) Visit(r *recipe.Recipe, index int) bool {
-	style.BoldFileV2.Printf("\n[%d] %s:\n", index+1, r.FullPath())
+	style.BoldFileV2.Printf("[%d] %s:\n", index+1, r.FullPath())
 
 	fmt.Print(INDENT)
 	style.Header.Println("Target:")

@@ -78,7 +78,7 @@ func (v cookVisitor) Visit(r *recipe.Recipe, index int) bool {
 		return false
 	}
 
-	style.BoldFileV2.Printf("\n[%d] %s:\n", index+1, r.FullPath())
+	style.BoldFileV2.Printf("[%d] %s:\n", index+1, r.FullPath())
 
 	com := compiler.NewCompiler(log, impl, v.createCompilerOptions(r, v.debug))
 	return v.compile(r, log, com)
@@ -111,8 +111,14 @@ func (cookVisitor) createCompilerOptions(r *recipe.Recipe, debug bool) compiler.
 
 func (v cookVisitor) compile(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
 	log.Println("[Compilation Start]")
+	indices, targetChanged := c.ComputeChangedSources(r, filepath.Join(v.outputPath, r.GetTarget(c.Opts.Debug)))
 
-	if ok := v.compileObjects(r, log, c); !ok {
+	if len(indices) == 0 && !targetChanged {
+		style.Success.Println(INDENT + "[UP TO DATE]")
+		return v.pass(log)
+	}
+
+	if ok := v.compileObjects(r, indices, log, c); !ok {
 		return v.fail(log)
 	}
 	if ok := v.compileTarget(r, log, c); !ok {
@@ -121,11 +127,10 @@ func (v cookVisitor) compile(r *recipe.Recipe, log *log.Logger, c compiler.Compi
 	return v.pass(log)
 }
 
-func (v cookVisitor) compileObjects(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
+func (v cookVisitor) compileObjects(r *recipe.Recipe, indices []int, log *log.Logger, c compiler.Compiler) bool {
 	fmt.Print(INDENT)
 	style.Header.Println("Cooking...")
 
-	indices := c.ComputeChangedSources(r)
 	style.InfoV2.Printf("%s+ [%d] changed %s\n", INDENT+INDENT, len(indices), common.SelectPlural("source", "sources", len(indices)))
 
 	for i, index := range indices {

@@ -31,14 +31,12 @@ func loadRecipe(path string) (*Recipe, error) {
 		Layers:           []string{},
 	}
 
-	r.ObjectPath = filepath.Join(r.Path, ".bchef/obj")
 	return r, r.parseRecipe(file)
 }
 
 type Recipe struct {
-	Name       string
-	Path       string
-	ObjectPath string
+	Name string
+	Path string
 
 	Target     string
 	TargetType int
@@ -98,10 +96,18 @@ func (r Recipe) GetTargetType() string {
 	}
 }
 
+func (r Recipe) GetObjectDir(debug bool) string {
+	return filepath.Join(".bchef/obj", r.GetMode(debug))
+}
+
+func (r Recipe) JoinObjectDir(obj string, debug bool) string {
+	return filepath.Join(r.GetObjectDir(debug), obj)
+}
+
 func (r Recipe) GetObjectPath(debug bool) string {
-	return filepath.Join(r.ObjectPath, r.GetMode(debug))
+	return r.JoinPath(r.GetObjectDir(debug))
 }
 
 func (r Recipe) JoinObjectPath(obj string, debug bool) string {
-	return filepath.Join(r.GetObjectPath(debug), obj)
+	return r.JoinPath(r.JoinObjectDir(obj, debug))
 }

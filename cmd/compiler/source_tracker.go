@@ -11,10 +11,11 @@ import (
 
 var includeRegex = regexp.MustCompile(`^\s*#include\s+"([^"]+.(h|hxx))"\s*$`)
 
-func newTracker(r *recipe.Recipe) sourceTracker {
+func newTracker(r *recipe.Recipe, debug bool) sourceTracker {
 	return sourceTracker{
 		cache:    sourceCache{},
 		recipe:   r,
+		debug:    debug,
 		includes: map[string][]string{},
 		mods:     map[string]int64{},
 	}
@@ -23,6 +24,7 @@ func newTracker(r *recipe.Recipe) sourceTracker {
 type sourceTracker struct {
 	cache    sourceCache
 	recipe   *recipe.Recipe
+	debug    bool
 	includes map[string][]string
 	mods     map[string]int64
 }
@@ -39,16 +41,27 @@ func (t *sourceTracker) SaveCache() {
 	t.cache.Save(t.recipe.Path)
 }
 
-func (t sourceTracker) CalcChangedIndices(sources []string, objects []string, objPath string) []int {
+func (t sourceTracker) CalcChangedIndices(target string) ([]int, bool) {
 	indices := []int{}
+	var maxMod int64 = 0
 
-	for i, src := range sources {
-		if t.isFileNewer(src, t.getMod(filepath.Join(objPath, objects[i]))) {
+	for i, src := range t.recipe.SourceFiles {
+		mod := t.getMod(t.recipe.JoinObjectDir(t.recipe.ObjectFiles[i], t.debug))
+		maxMod = t.maxMod(maxMod, mod)
+
+		if t.isFileNewer(src, mod) {
 			indices = append(indices, i)
 		}
 	}
 
-	return indices
+	return indices, t.getModByPath(target) < maxMod
+}
+
+func (t sourceTracker) maxMod(mod1 int64, mod2 int64) int64 {
+	if mod1 >= mod2 {
+		return mod1
+	}
+	return mod2
 }
 
 func (t sourceTracker) isFileNewer(file string, compare int64) bool {
@@ -71,15 +84,18 @@ func (t sourceTracker) getMod(file string) int64 {
 		return mod
 	}
 
-	info, err := os.Stat(t.recipe.JoinPath(file))
-	if err != nil {
-		mod = 0
-	} else {
-		mod = info.ModTime().Unix()
-	}
+	mod = t.getModByPath(t.recipe.JoinPath(file))
 
 	t.mods[file] = mod
 	return mod
+}
+
+func (t sourceTracker) getModByPath(path string) int64 {
+	info, err := os.Stat(path)
+	if err != nil {
+		return 0
+	}
+	return info.ModTime().Unix()
 }
 
 func (t sourceTracker) getIncludes(file string) []string {

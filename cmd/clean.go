@@ -57,15 +57,15 @@ func (v cleanVisitor) Visit(r *recipe.Recipe, index int) bool {
 }
 
 func (v cleanVisitor) removeObject(r *recipe.Recipe, obj string, debug bool) {
-	v.removeFile(r.ObjectPath, filepath.Join(r.GetMode(debug), obj), style.Delete)
+	v.removeFile(r.JoinObjectPath(obj, debug), filepath.Join(r.GetMode(debug), obj), style.Delete)
 }
 
 func (v cleanVisitor) removeCacheFile(r *recipe.Recipe, file string) {
-	v.removeFile(r.Path, file, style.Delete)
+	v.removeFile(r.JoinPath(file), file, style.Delete)
 }
 
-func (cleanVisitor) removeFile(path string, file string, deleteStyle style.Style) {
-	if err := os.Remove(filepath.Join(path, file)); err == nil {
-		deleteStyle.Println(INDENT + "x " + file)
+func (cleanVisitor) removeFile(file string, name string, deleteStyle style.Style) {
+	if err := os.Remove(file); err == nil {
+		deleteStyle.Println(INDENT + "x " + name)
 	}
 }

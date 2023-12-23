@@ -35,15 +35,13 @@ type Compiler struct {
 	Opts Options
 }
 
-func (c Compiler) ComputeChangedSources(r *recipe.Recipe) []int {
-	tracker := newTracker(r)
+func (c Compiler) ComputeChangedSources(r *recipe.Recipe, target string) ([]int, bool) {
+	tracker := newTracker(r, c.Opts.Debug)
 
 	tracker.LoadCache()
 	defer tracker.SaveCache()
 
-	indices := tracker.CalcChangedIndices(r.SourceFiles, r.ObjectFiles, r.GetObjectPath(c.Opts.Debug))
-
-	return indices
+	return tracker.CalcChangedIndices(target)
 }
 
 func (c Compiler) CompileObject(src string, obj string) bool {
