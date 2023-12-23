@@ -2,6 +2,7 @@ package gxx
 
 import (
 	"os/exec"
+	"path/filepath"
 
 	"github.com/binary-soup/bchef/cmd/compiler"
 )
@@ -12,23 +13,24 @@ const (
 	STANDARD = "-std=c++17"
 )
 
-func NewGXXCompiler(includes []string, staticLibs []string, libraryPaths []string, sharedLibs []string) GXX {
+func NewGXXCompiler(d compiler.Data) GXX {
 	gxx := GXX{
-		includes:     make([]string, len(includes)),
-		staticLibs:   staticLibs,
-		libraryPaths: make([]string, len(libraryPaths)),
-		sharedLibs:   make([]string, len(sharedLibs)),
+		includes:     make([]string, len(d.Includes)),
+		staticLibs:   d.StaticLibraries,
+		libraryPaths: make([]string, len(d.LibraryPaths)),
+		sharedLibs:   make([]string, len(d.SharedLibraries)),
+		runtimePath:  d.RuntimePath,
 	}
 
-	for i, include := range includes {
+	for i, include := range d.Includes {
 		gxx.includes[i] = "-I" + include
 	}
 
-	for i, path := range libraryPaths {
+	for i, path := range d.LibraryPaths {
 		gxx.libraryPaths[i] = "-L" + path
 	}
 
-	for i, lib := range sharedLibs {
+	for i, lib := range d.SharedLibraries {
 		gxx.sharedLibs[i] = "-l" + lib
 	}
 
@@ -40,6 +42,7 @@ type GXX struct {
 	staticLibs   []string
 	libraryPaths []string
 	sharedLibs   []string
+	runtimePath  string
 }
 
 func (gxx GXX) CompileObject(opts compiler.Options, src string, obj string) *exec.Cmd {
@@ -60,6 +63,10 @@ func (gxx GXX) CreateExecutable(opts compiler.Options, out string, objs ...strin
 	args = append(args, gxx.libraryPaths...)
 	args = append(args, gxx.sharedLibs...)
 
+	if len(gxx.runtimePath) > 0 {
+		args = append(args, filepath.Join("-Wl,-rpath,$ORIGIN", gxx.runtimePath))
+	}
+
 	return exec.Command(COMPILER, args...)
 }
 
@@ -77,6 +84,10 @@ func (gxx GXX) CreateSharedLibrary(opts compiler.Options, lib string, objs ...st
 	args = append(args, objs...)
 	args = append(args, gxx.libraryPaths...)
 	args = append(args, gxx.sharedLibs...)
+
+	if len(gxx.runtimePath) > 0 {
+		args = append(args, filepath.Join("-Wl,-rpath,$ORIGIN", gxx.runtimePath))
+	}
 
 	return exec.Command(COMPILER, args...)
 }

@@ -84,14 +84,29 @@ func (v cookVisitor) Visit(r *recipe.Recipe, index int) bool {
 	return v.compile(r, log, com)
 }
 
-func (cookVisitor) chooseCompiler(r *recipe.Recipe, compilerName string) (compiler.CompilerImpl, error) {
+func (v cookVisitor) chooseCompiler(r *recipe.Recipe, compilerName string) (compiler.CompilerImpl, error) {
+	data := compiler.NewData(r)
+	for _, target := range r.LinkedStaticLayers {
+		data.LinkStaticLayer(v.outputPath, v.resolveTarget(target))
+	}
+	for _, target := range r.LinkedSharedLayers {
+		data.LinkSharedLayer(v.outputPath, v.resolveTarget(target))
+	}
+
 	// TODO: support other compilers
 	switch compilerName {
 	case "", "g++":
-		return gxx.NewGXXCompiler(r.Includes, r.LinkedStaticLibs, r.LibraryPaths, r.LinkedSharedLibs), nil
+		return gxx.NewGXXCompiler(data), nil
 	default:
 		return nil, fmt.Errorf("unsupported compiler \"%s\"", compilerName)
 	}
+}
+
+func (v cookVisitor) resolveTarget(target string) string {
+	if v.debug {
+		return target + ".d"
+	}
+	return target
 }
 
 func (cookVisitor) createCompilerOptions(r *recipe.Recipe, debug bool) compiler.Options {
@@ -114,6 +129,7 @@ func (v cookVisitor) compile(r *recipe.Recipe, log *log.Logger, c compiler.Compi
 	indices, targetChanged := c.ComputeChangedSources(r, filepath.Join(v.outputPath, r.GetTarget(c.Opts.Debug)))
 
 	if len(indices) == 0 && !targetChanged {
+		log.Println("[UP TO DATE]")
 		style.Success.Println(INDENT + "[UP TO DATE]")
 		return v.pass(log)
 	}
@@ -154,17 +170,22 @@ func (v cookVisitor) compileTarget(r *recipe.Recipe, log *log.Logger, c compiler
 
 	count := len(r.ObjectFiles)
 	if count > 0 {
-		style.InfoV2.Printf("%s+ [%d] %s\n", INDENT+INDENT, count, common.SelectPlural("object", "objects", count))
+		style.InfoV2.Printf("%s+  [%d] %s\n", INDENT+INDENT, count, common.SelectPlural("object", "objects", count))
 	}
 
 	count = len(r.LinkedSharedLibs)
 	if count > 0 {
-		style.InfoV2.Printf("%s+ [%d] shared %s\n", INDENT+INDENT, count, common.SelectPlural("library", "libraries", count))
+		style.InfoV2.Printf("%s+  [%d] shared %s\n", INDENT+INDENT, count, common.SelectPlural("library", "libraries", count))
 	}
 
 	count = len(r.LinkedStaticLibs)
 	if count > 0 {
-		style.InfoV2.Printf("%s+ [%d] static %s\n", INDENT+INDENT, count, common.SelectPlural("library", "libraries", count))
+		style.InfoV2.Printf("%s+  [%d] static %s\n", INDENT+INDENT, count, common.SelectPlural("library", "libraries", count))
+	}
+
+	count = len(r.Layers)
+	if count > 0 {
+		style.InfoV2.Printf("%s+  [%d] %s\n", INDENT+INDENT, count, common.SelectPlural("layer", "layers", count))
 	}
 
 	objects := make([]string, len(r.ObjectFiles))

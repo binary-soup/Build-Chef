@@ -32,10 +32,21 @@ func (t *RecipeTree) loadRecipe(path string) (*Recipe, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		t.linkLayer(r, t.recipes[layer])
 	}
 
 	t.traversalOrder = append(t.traversalOrder, path)
 	return r, nil
+}
+
+func (t *RecipeTree) linkLayer(parent *Recipe, layer *Recipe) {
+	switch layer.TargetType {
+	case TARGET_STATIC_LIBRARY:
+		parent.LinkedStaticLayers = append(parent.LinkedStaticLayers, layer.Target)
+	case TARGET_SHARED_LIBRARY:
+		parent.LinkedSharedLayers = append(parent.LinkedSharedLayers, layer.Target)
+	}
 }
 
 type Visitor interface {

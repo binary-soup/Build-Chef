@@ -20,15 +20,21 @@ func loadRecipe(path string) (*Recipe, error) {
 	defer file.Close()
 
 	r := &Recipe{
-		Path:             filepath.Dir(path),
-		Name:             filepath.Base(path),
-		SourceFiles:      []string{},
-		ObjectFiles:      []string{},
-		Includes:         []string{},
+		Path: filepath.Dir(path),
+		Name: filepath.Base(path),
+
+		SourceFiles: []string{},
+		ObjectFiles: []string{},
+
+		Includes: []string{},
+
 		LibraryPaths:     []string{},
 		LinkedSharedLibs: []string{},
 		LinkedStaticLibs: []string{},
-		Layers:           []string{},
+
+		Layers:             []string{},
+		LinkedStaticLayers: []string{},
+		LinkedSharedLayers: []string{},
 	}
 
 	return r, r.parseRecipe(file)
@@ -50,7 +56,9 @@ type Recipe struct {
 	LinkedSharedLibs []string
 	LinkedStaticLibs []string
 
-	Layers []string
+	Layers             []string
+	LinkedStaticLayers []string
+	LinkedSharedLayers []string
 }
 
 func (r Recipe) FullPath() string {
