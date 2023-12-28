@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/binary-soup/bchef/cmd"
+	"github.com/binary-soup/bchef/common"
 	"github.com/binary-soup/bchef/config"
 	"github.com/binary-soup/bchef/style"
 )
@@ -39,7 +40,7 @@ func main() {
 	}
 
 	if err = runCommand(os.Args[1], cfg, os.Args[2:]); err != nil {
-		printError(err)
+		common.PrintError(err)
 	}
 }
 
@@ -87,8 +88,4 @@ func runCommand(name string, cfg config.Config, args []string) error {
 		}
 	}
 	return fmt.Errorf("unknown command \"%s\"", name)
-}
-
-func printError(err error) {
-	fmt.Println(style.BoldError.String("Error:"), err)
 }

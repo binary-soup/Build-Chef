@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/binary-soup/bchef/cmd/compiler"
 	"github.com/binary-soup/bchef/cmd/compiler/gxx"
@@ -30,45 +31,85 @@ type CookCommand struct {
 func (cmd CookCommand) Run(cfg config.Config, args []string) error {
 	path := cmd.pathFlag()
 	release := cmd.boolFlag("release", false, "build in release mode")
+	outputPath := cmd.stringFlag("o", ".", "path to output directory")
 	cmd.parseFlags(args)
 
-	r, err := cmd.loadRecipe(*path)
+	t, err := cmd.loadRecipeTree(*path)
 	if err != nil {
 		return err
 	}
 
-	return cmd.cook(r, cfg.Compiler, !*release)
+	debug := !*release
+	if debug {
+		style.BoldError.Println("[DEBUG MODE]")
+	}
+
+	res := t.Traverse(cookVisitor{
+		outputPath:   *outputPath,
+		compilerName: cfg.Compiler,
+		debug:        debug,
+	})
+
+	if res {
+		style.BoldSuccess.Println("Bon Appétit!")
+	} else {
+		style.BoldError.Println("Burnt!")
+	}
+
+	return nil
 }
 
-func (cmd CookCommand) cook(r *recipe.Recipe, compilerName string, debug bool) error {
-	os.MkdirAll(r.GetObjectPath(debug), 0755)
+type cookVisitor struct {
+	outputPath   string
+	compilerName string
+	debug        bool
+}
+
+func (v cookVisitor) Visit(r *recipe.Recipe, index int) bool {
+	os.MkdirAll(r.GetObjectPath(v.debug), 0755)
 	file, _ := os.Create(r.JoinPath(COMPILE_LOG_FILE))
 
 	defer file.Close()
 	log := log.New(file, "", log.Ltime)
 
-	impl, err := cmd.chooseCompiler(r, compilerName)
+	impl, err := v.chooseCompiler(r, v.compilerName)
 	if err != nil {
-		return err
+		common.PrintError(err)
+		return false
 	}
 
-	com := compiler.NewCompiler(log, impl, cmd.createCompilerOptions(r, debug))
-	cmd.compile(r, log, com)
+	style.BoldFileV2.Printf("[%d] %s:\n", index+1, r.FullPath())
 
-	return nil
+	com := compiler.NewCompiler(log, impl, v.createCompilerOptions(r, v.debug))
+	return v.compile(r, log, com)
 }
 
-func (CookCommand) chooseCompiler(r *recipe.Recipe, compilerName string) (compiler.CompilerImpl, error) {
+func (v cookVisitor) chooseCompiler(r *recipe.Recipe, compilerName string) (compiler.CompilerImpl, error) {
+	data := compiler.NewData(r)
+	for _, target := range r.LinkedStaticLayers {
+		data.LinkStaticLayer(v.outputPath, v.resolveTarget(target))
+	}
+	for _, target := range r.LinkedSharedLayers {
+		data.LinkSharedLayer(v.outputPath, v.resolveTarget(target))
+	}
+
 	// TODO: support other compilers
 	switch compilerName {
 	case "", "g++":
-		return gxx.NewGXXCompiler(r.Includes, r.LinkedStaticLibs, r.LibraryPaths, r.LinkedSharedLibs), nil
+		return gxx.NewGXXCompiler(data), nil
 	default:
 		return nil, fmt.Errorf("unsupported compiler \"%s\"", compilerName)
 	}
 }
 
-func (CookCommand) createCompilerOptions(r *recipe.Recipe, debug bool) compiler.Options {
+func (v cookVisitor) resolveTarget(target string) string {
+	if v.debug {
+		return target + ".d"
+	}
+	return target
+}
+
+func (cookVisitor) createCompilerOptions(r *recipe.Recipe, debug bool) compiler.Options {
 	opts := compiler.Options{
 		Debug:  false,
 		PIC:    r.TargetType == recipe.TARGET_SHARED_LIBRARY,
@@ -83,31 +124,34 @@ func (CookCommand) createCompilerOptions(r *recipe.Recipe, debug bool) compiler.
 	return opts
 }
 
-func (cmd CookCommand) compile(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
+func (v cookVisitor) compile(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
 	log.Println("[Compilation Start]")
+	indices, targetChanged := c.ComputeChangedSources(r, filepath.Join(v.outputPath, r.GetTarget(c.Opts.Debug)))
 
-	if c.Opts.Debug {
-		style.BoldError.Println("[DEBUG MODE]")
+	if len(indices) == 0 && !targetChanged {
+		log.Println("[UP TO DATE]")
+		style.Success.Println(INDENT + "[UP TO DATE]")
+		return v.pass(log)
 	}
 
-	if ok := cmd.compileObjects(r, log, c); !ok {
-		return cmd.fail(log, "Bad Ingredients!")
+	if ok := v.compileObjects(r, indices, log, c); !ok {
+		return v.fail(log)
 	}
-	if ok := cmd.compileTarget(r, log, c); !ok {
-		return cmd.fail(log, "Burnt!")
+	if ok := v.compileTarget(r, log, c); !ok {
+		return v.fail(log)
 	}
-	return cmd.pass(log, "Bon Appétit!")
+	return v.pass(log)
 }
 
-func (cmd CookCommand) compileObjects(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
-	style.Header.Println("Prepping...")
+func (v cookVisitor) compileObjects(r *recipe.Recipe, indices []int, log *log.Logger, c compiler.Compiler) bool {
+	fmt.Print(INDENT)
+	style.Header.Println("Cooking...")
 
-	indices := c.ComputeChangedSources(r)
-	style.InfoV2.Printf("%s+ [%d] changed %s\n", INDENT, len(indices), common.SelectPlural("source", "sources", len(indices)))
+	style.InfoV2.Printf("%s+ [%d] changed %s\n", INDENT+INDENT, len(indices), common.SelectPlural("source", "sources", len(indices)))
 
 	for i, index := range indices {
 		src := r.SourceFiles[index]
-		cmd.printCompileFile(r, float32(i)/float32(len(indices)), src)
+		v.printCompileFile(r, float32(i)/float32(len(indices)), src)
 
 		obj := r.ObjectFiles[index]
 		res := c.CompileObject(r.JoinPath(src), r.JoinObjectPath(obj, c.Opts.Debug))
@@ -120,22 +164,28 @@ func (cmd CookCommand) compileObjects(r *recipe.Recipe, log *log.Logger, c compi
 	return true
 }
 
-func (cmd CookCommand) compileTarget(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
-	style.Header.Println("Cooking...")
+func (v cookVisitor) compileTarget(r *recipe.Recipe, log *log.Logger, c compiler.Compiler) bool {
+	fmt.Print(INDENT)
+	style.Header.Println("Combining...")
 
 	count := len(r.ObjectFiles)
 	if count > 0 {
-		style.InfoV2.Printf("%s+ [%d] %s\n", INDENT, count, common.SelectPlural("object", "objects", count))
+		style.InfoV2.Printf("%s+  [%d] %s\n", INDENT+INDENT, count, common.SelectPlural("object", "objects", count))
 	}
 
 	count = len(r.LinkedSharedLibs)
 	if count > 0 {
-		style.InfoV2.Printf("%s+ [%d] shared %s\n", INDENT, count, common.SelectPlural("library", "libraries", count))
+		style.InfoV2.Printf("%s+  [%d] shared %s\n", INDENT+INDENT, count, common.SelectPlural("library", "libraries", count))
 	}
 
 	count = len(r.LinkedStaticLibs)
 	if count > 0 {
-		style.InfoV2.Printf("%s+ [%d] static %s\n", INDENT, count, common.SelectPlural("library", "libraries", count))
+		style.InfoV2.Printf("%s+  [%d] static %s\n", INDENT+INDENT, count, common.SelectPlural("library", "libraries", count))
+	}
+
+	count = len(r.Layers)
+	if count > 0 {
+		style.InfoV2.Printf("%s+  [%d] %s\n", INDENT+INDENT, count, common.SelectPlural("layer", "layers", count))
 	}
 
 	objects := make([]string, len(r.ObjectFiles))
@@ -143,10 +193,10 @@ func (cmd CookCommand) compileTarget(r *recipe.Recipe, log *log.Logger, c compil
 		objects[i] = r.JoinObjectPath(obj, c.Opts.Debug)
 	}
 
-	cmd.printCompileFile(r, 1.0, "(ALL)")
+	v.printCompileFile(r, 1.0, "(ALL)")
 
 	target := r.GetTarget(c.Opts.Debug)
-	res := cmd.createTarget(r.TargetType, c, r.JoinPath(target), objects)
+	res := v.createTarget(r.TargetType, c, filepath.Join(v.outputPath, target), objects)
 
 	if res {
 		style.BoldCreate.Println(target)
@@ -154,7 +204,7 @@ func (cmd CookCommand) compileTarget(r *recipe.Recipe, log *log.Logger, c compil
 	return res
 }
 
-func (CookCommand) createTarget(targetType int, c compiler.Compiler, target string, objs []string) bool {
+func (cookVisitor) createTarget(targetType int, c compiler.Compiler, target string, objs []string) bool {
 	switch targetType {
 	case recipe.TARGET_EXECUTABLE:
 		return c.CreateExecutable(target, objs...)
@@ -167,20 +217,18 @@ func (CookCommand) createTarget(targetType int, c compiler.Compiler, target stri
 	}
 }
 
-func (cmd CookCommand) printCompileFile(r *recipe.Recipe, percent float32, src string) {
-	style.BoldInfo.Printf("%s[%3d%%] ", INDENT, int(percent*100))
+func (v cookVisitor) printCompileFile(r *recipe.Recipe, percent float32, src string) {
+	style.BoldInfo.Printf("%s[%3d%%] ", INDENT+INDENT, int(percent*100))
 	style.File.Print(src)
 	fmt.Print(" -> ")
 }
 
-func (CookCommand) fail(log *log.Logger, message string) bool {
+func (cookVisitor) fail(log *log.Logger) bool {
 	log.Println("[Compilation Failed]")
-	style.BoldError.Println(message)
 	return false
 }
 
-func (CookCommand) pass(log *log.Logger, message string) bool {
+func (cookVisitor) pass(log *log.Logger) bool {
 	log.Println("[Compilation Success]")
-	style.BoldSuccess.Println(message)
 	return true
 }

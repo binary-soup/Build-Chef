@@ -6,40 +6,43 @@ import (
 	"path/filepath"
 )
 
-func Load(path string) (*Recipe, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, errors.Join(errors.New("error opening file"), err)
-	}
-	defer file.Close()
-
-	r := Recipe{
-		Path:             filepath.Dir(path),
-		Name:             filepath.Base(path),
-		SourceFiles:      []string{},
-		ObjectFiles:      []string{},
-		Includes:         []string{},
-		LibraryPaths:     []string{},
-		LinkedSharedLibs: []string{},
-		LinkedStaticLibs: []string{},
-	}
-
-	r.ObjectPath = filepath.Join(r.Path, ".bchef/obj")
-	r.Includes = append(r.Includes, r.Path)
-
-	return &r, r.parseRecipe(file)
-}
-
 const (
 	TARGET_EXECUTABLE     = iota
 	TARGET_STATIC_LIBRARY = iota
 	TARGET_SHARED_LIBRARY = iota
 )
 
+func loadRecipe(path string) (*Recipe, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, errors.Join(errors.New("error opening file"), err)
+	}
+	defer file.Close()
+
+	r := &Recipe{
+		Path: filepath.Dir(path),
+		Name: filepath.Base(path),
+
+		SourceFiles: []string{},
+		ObjectFiles: []string{},
+
+		Includes: []string{},
+
+		LibraryPaths:     []string{},
+		LinkedSharedLibs: []string{},
+		LinkedStaticLibs: []string{},
+
+		Layers:             []string{},
+		LinkedStaticLayers: []string{},
+		LinkedSharedLayers: []string{},
+	}
+
+	return r, r.parseRecipe(file)
+}
+
 type Recipe struct {
-	Name       string
-	Path       string
-	ObjectPath string
+	Name string
+	Path string
 
 	Target     string
 	TargetType int
@@ -52,6 +55,10 @@ type Recipe struct {
 	LibraryPaths     []string
 	LinkedSharedLibs []string
 	LinkedStaticLibs []string
+
+	Layers             []string
+	LinkedStaticLayers []string
+	LinkedSharedLayers []string
 }
 
 func (r Recipe) FullPath() string {
@@ -73,7 +80,7 @@ func (Recipe) GetMode(debug bool) string {
 func (r Recipe) GetTarget(debug bool) string {
 	target := r.Target
 	if debug {
-		target = r.Target + "." + r.GetMode(true)
+		target = r.Target + ".d"
 	}
 
 	switch r.TargetType {
@@ -97,10 +104,18 @@ func (r Recipe) GetTargetType() string {
 	}
 }
 
+func (r Recipe) GetObjectDir(debug bool) string {
+	return filepath.Join(".bchef/obj", r.GetMode(debug))
+}
+
+func (r Recipe) JoinObjectDir(obj string, debug bool) string {
+	return filepath.Join(r.GetObjectDir(debug), obj)
+}
+
 func (r Recipe) GetObjectPath(debug bool) string {
-	return filepath.Join(r.ObjectPath, r.GetMode(debug))
+	return r.JoinPath(r.GetObjectDir(debug))
 }
 
 func (r Recipe) JoinObjectPath(obj string, debug bool) string {
-	return filepath.Join(r.GetObjectPath(debug), obj)
+	return r.JoinPath(r.JoinObjectDir(obj, debug))
 }

@@ -206,3 +206,19 @@ func (rec *Recipe) parsePackageKeyword(r *reader.Reader, tokens []string) error 
 
 	return rec.parsePackage(pkg, file)
 }
+
+func (rec *Recipe) parseLayerKeyword(r *reader.Reader, tokens []string) error {
+	token := rec.firstOrEmpty(tokens)
+	if len(token) == 0 {
+		return r.Error("missing or empty layer name")
+	}
+	layer := rec.JoinPath(token)
+
+	stat, err := os.Stat(layer)
+	if err != nil || stat.IsDir() {
+		layer = filepath.Join(layer, "recipe.txt")
+	}
+
+	rec.Layers = append(rec.Layers, layer)
+	return nil
+}

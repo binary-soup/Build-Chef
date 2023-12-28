@@ -10,7 +10,6 @@ import (
 
 	"github.com/binary-soup/bchef/common"
 	"github.com/binary-soup/bchef/config"
-	"github.com/binary-soup/bchef/recipe"
 	"github.com/binary-soup/bchef/style"
 )
 
@@ -47,29 +46,24 @@ func (cmd MakeCommand) Run(_ config.Config, args []string) error {
 	header := cmd.boolFlag("header", false, "only generate header file")
 	cmd.parseFlags(args)
 
-	r, err := cmd.loadRecipe(*path)
-	if err != nil {
-		return err
-	}
-
 	cmd.overwrite = *overwrite
-	return cmd.create(r, *name, *header)
+	return cmd.create(*path, *name, *header)
 }
 
-func (cmd MakeCommand) create(r *recipe.Recipe, name string, headerOnly bool) error {
+func (cmd MakeCommand) create(path string, name string, headerOnly bool) error {
 	if len(name) == 0 {
 		return errors.New("missing or empty name")
 	}
 
 	style.Header.Println("Making...")
 
-	header := name + ".hxx"
-	if err := cmd.createHeader(r.JoinPath(header), header); err != nil {
+	header := filepath.Join(path, name+".hxx")
+	if err := cmd.createHeader(header, header); err != nil {
 		return err
 	}
 
 	if !headerOnly {
-		if err := cmd.createSource(r.JoinPath(name+".cxx"), header); err != nil {
+		if err := cmd.createSource(filepath.Join(path, name+".cxx"), header); err != nil {
 			return err
 		}
 	}

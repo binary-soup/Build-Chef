@@ -32,6 +32,8 @@ func (packageParser) ParseKeyword(rec *Recipe, r *reader.Reader, keyword string,
 		return rec.parseLinkStaticLibsKeyword(r, tokens)
 	case "PACKAGE":
 		return r.Error("sub-packages unsupported")
+	case "LAYER":
+		return r.Error("\"LAYER\" unsupported in packages")
 	default:
 		return r.Errorf("unknown keyword \"%s\"", keyword)
 	}
