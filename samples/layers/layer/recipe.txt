@@ -1,0 +1,3 @@
+|TARGET SHARED_LIBRARY layer1
+
+|SOURCES src1.cxx

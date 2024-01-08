@@ -14,4 +14,4 @@ Build chef is written entirely in Golang with no dependencies. Simply run the go
 
 Use the `-h` flag for usage details.
 
-Recipe files themselves are very intuitive. View the samples files under `samples` for format and usage details.
+Recipe files themselves are very intuitive. View the samples files under `samples` for format and usage details. Run `bchef review -path samples` to inspect how the samples are parsed.

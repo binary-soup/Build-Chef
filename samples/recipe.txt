@@ -36,5 +36,16 @@
     foo
     bar
 
-# Include a package
-|PACKAGE pkg.txt
+# Include a single package
+|PACKAGES packages/pkg.txt
+
+# Include many packages
+|PACKAGES packages/
+    pkg.txt
+
+# Add a single layer
+|LAYERS layers/layer
+
+# Add many layers
+|LAYERS layers/
+    layer

@@ -8,9 +8,11 @@ import (
 	"github.com/binary-soup/bchef/reader"
 )
 
-func (*Recipe) whileNotKeyword(r *reader.Reader, do func(string)) error {
+func (*Recipe) whileNotKeyword(r *reader.Reader, do func(string) error) error {
 	for line, hasNext := r.Next(); hasNext && line[0] != '|'; line, hasNext = r.Next() {
-		do(line)
+		if err := do(line); err != nil {
+			return err
+		}
 	}
 
 	r.Rewind(1)
@@ -86,8 +88,9 @@ func (rec *Recipe) parseSourcesSingle(r *reader.Reader, src string) error {
 }
 
 func (rec *Recipe) parseSourcesMulti(r *reader.Reader, path string) error {
-	return rec.whileNotKeyword(r, func(line string) {
+	return rec.whileNotKeyword(r, func(line string) error {
 		rec.addSource(filepath.Join(path, line))
+		return nil
 	})
 }
 
@@ -114,8 +117,9 @@ func (rec *Recipe) parseIncludesSingle(r *reader.Reader, include string) error {
 }
 
 func (rec *Recipe) parseIncludesMulti(r *reader.Reader) error {
-	return rec.whileNotKeyword(r, func(include string) {
+	return rec.whileNotKeyword(r, func(include string) error {
 		rec.addInclude(include)
+		return nil
 	})
 }
 
@@ -150,8 +154,9 @@ func (rec *Recipe) parseLinkSharedLibsMulti(r *reader.Reader, path string) error
 		rec.LibraryPaths = append(rec.LibraryPaths, path)
 	}
 
-	return rec.whileNotKeyword(r, func(line string) {
+	return rec.whileNotKeyword(r, func(line string) error {
 		rec.addLinkedSharedLibrary(line)
+		return nil
 	})
 }
 
@@ -179,8 +184,9 @@ func (rec *Recipe) parseLinkStaticLibsSingle(r *reader.Reader, lib string) error
 }
 
 func (rec *Recipe) parseLinkStaticLibsMulti(r *reader.Reader, path string) error {
-	return rec.whileNotKeyword(r, func(line string) {
+	return rec.whileNotKeyword(r, func(line string) error {
 		rec.addLinkedStaticLibrary(filepath.Join(path, line))
+		return nil
 	})
 }
 
@@ -193,10 +199,32 @@ func (rec *Recipe) addLinkedStaticLibrary(lib string) {
 
 func (rec *Recipe) parsePackageKeyword(r *reader.Reader, tokens []string) error {
 	token := rec.firstOrEmpty(tokens)
-	if len(token) == 0 {
+
+	if !rec.peekExtraLine(r) {
+		return rec.parsePackageSingle(r, token)
+	} else {
+		return rec.parsePackageMulti(r, token)
+	}
+}
+
+func (rec *Recipe) parsePackageSingle(r *reader.Reader, pkg string) error {
+	if len(pkg) == 0 {
 		return r.Error("missing or empty package name")
 	}
-	pkg := rec.JoinPath(token)
+
+	return rec.parsePackageFile(r, pkg)
+}
+
+func (rec *Recipe) parsePackageMulti(r *reader.Reader, path string) error {
+	return rec.whileNotKeyword(r, func(line string) error {
+		return rec.parsePackageFile(r, filepath.Join(path, line))
+	})
+}
+
+func (rec *Recipe) parsePackageFile(r *reader.Reader, pkg string) error {
+	if !filepath.IsAbs(pkg) {
+		pkg = rec.JoinPath(pkg)
+	}
 
 	file, err := os.Open(pkg)
 	if err != nil {
@@ -209,13 +237,39 @@ func (rec *Recipe) parsePackageKeyword(r *reader.Reader, tokens []string) error 
 
 func (rec *Recipe) parseLayerKeyword(r *reader.Reader, tokens []string) error {
 	token := rec.firstOrEmpty(tokens)
-	if len(token) == 0 {
+
+	if !rec.peekExtraLine(r) {
+		return rec.parseLayerSingle(r, token)
+	} else {
+		return rec.parseLayerMulti(r, token)
+	}
+}
+
+func (rec *Recipe) parseLayerSingle(r *reader.Reader, layer string) error {
+	if len(layer) == 0 {
 		return r.Error("missing or empty layer name")
 	}
-	layer := rec.JoinPath(token)
+
+	return rec.addLayer(r, layer)
+}
+
+func (rec *Recipe) parseLayerMulti(r *reader.Reader, path string) error {
+	return rec.whileNotKeyword(r, func(line string) error {
+		return rec.addLayer(r, filepath.Join(path, line))
+	})
+}
+
+func (rec *Recipe) addLayer(r *reader.Reader, layer string) error {
+	if !filepath.IsAbs(layer) {
+		layer = rec.JoinPath(layer)
+	}
 
 	stat, err := os.Stat(layer)
-	if err != nil || stat.IsDir() {
+	if err != nil {
+		return r.Errorf("error opening layer file \"%s\"", layer)
+	}
+
+	if stat.IsDir() {
 		layer = filepath.Join(layer, "recipe.txt")
 	}
 

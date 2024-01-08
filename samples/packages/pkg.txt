@@ -2,7 +2,7 @@
 # Packages are sub-recipes that only allow INCLUDES, STATIC_LIBS, and SHARED_LIBS keywords.
 # Use these packages to group dependencies together.
 
-|INCLUDES include/dir/
+|INCLUDES include/dir/1
 
 |LINK_SHARED_LIBS
     lib1

@@ -149,7 +149,7 @@ func (v reviewVisitor) reviewSharedLibrary(lib string, paths []string) {
 	v.reviewFilepath(
 		v.verifySharedLibrary(paths, lib),
 		v.verified(), v.unverified(),
-		style.FileV2.String(lib),
+		style.Info.String(lib),
 	)
 }
 
@@ -172,7 +172,7 @@ func (v reviewVisitor) reviewStaticLibrary(lib string) {
 	v.reviewFilepath(
 		v.verifyPath(lib),
 		v.verified(), v.notFound("library"),
-		style.FileV2.String(lib),
+		style.Info.String(lib),
 	)
 }
 
